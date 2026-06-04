@@ -236,6 +236,16 @@ export function useNavigationSessions(options: UseNavigationSessionsOptions = {}
     onNavigate?.();
   }, [setView, onNavigate, extensionsList, activeSessionId]);
 
+  useEffect(() => {
+    const handleTriggerNewChat = () => {
+      void handleNewChat();
+    };
+    window.addEventListener(AppEvents.TRIGGER_NEW_CHAT, handleTriggerNewChat);
+    return () => {
+      window.removeEventListener(AppEvents.TRIGGER_NEW_CHAT, handleTriggerNewChat);
+    };
+  }, [handleNewChat]);
+
   const handleSessionClick = useCallback(
     (sessionId: string) => {
       navigate(`/pair?resumeSessionId=${sessionId}`);

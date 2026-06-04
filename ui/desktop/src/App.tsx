@@ -92,7 +92,9 @@ const PairRouteWrapper = ({
   const routeState =
     (location.state as PairRouteState) || (window.history.state as PairRouteState) || {};
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const creationStateRef = useRef<'idle' | 'in_flight' | 'done'>('idle');
+  const extensionsListRef = useRef(extensionsList);
+  extensionsListRef.current = extensionsList;
 
   const resumeSessionId = searchParams.get('resumeSessionId') ?? undefined;
   const recipeDeeplinkFromConfig = window.appConfig?.get('recipeDeeplink') as string | undefined;
@@ -102,56 +104,64 @@ const PairRouteWrapper = ({
   // Create session if we have an initialMessage, recipeDeeplink, or recipeId but no sessionId
   useEffect(() => {
     if (
-      (initialMessage || recipeDeeplinkFromConfig || recipeIdFromConfig) &&
-      !resumeSessionId &&
-      !isCreatingSession
+      !(initialMessage || recipeDeeplinkFromConfig || recipeIdFromConfig) ||
+      resumeSessionId ||
+      creationStateRef.current !== 'idle'
     ) {
-      setIsCreatingSession(true);
-
-      (async () => {
-        try {
-          const newSession = await createSession(getInitialWorkingDir(), {
-            recipeDeeplink: recipeDeeplinkFromConfig,
-            recipeId: recipeIdFromConfig,
-            allExtensions: extensionsList,
-          });
-          const sessionInitialMessage = resolveSessionInitialMessage(newSession, initialMessage);
-
-          window.dispatchEvent(
-            new CustomEvent(AppEvents.ADD_ACTIVE_SESSION, {
-              detail: {
-                sessionId: newSession.id,
-                initialMessage: sessionInitialMessage,
-              },
-            })
-          );
-
-          setSearchParams((prev) => {
-            prev.set('resumeSessionId', newSession.id);
-            return prev;
-          });
-        } catch (error) {
-          console.error('Failed to create session:', error);
-          trackErrorWithContext(error, {
-            component: 'PairRouteWrapper',
-            action: 'create_session',
-            recoverable: true,
-          });
-        } finally {
-          setIsCreatingSession(false);
-        }
-      })();
+      return;
     }
-    // Note: isCreatingSession is intentionally NOT in the dependency array
-    // It's only used as a guard to prevent concurrent session creation
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    creationStateRef.current = 'in_flight';
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const newSession = await createSession(getInitialWorkingDir(), {
+          recipeDeeplink: recipeDeeplinkFromConfig,
+          recipeId: recipeIdFromConfig,
+          allExtensions: extensionsListRef.current,
+        });
+        if (cancelled) {
+          return;
+        }
+        creationStateRef.current = 'done';
+        const sessionInitialMessage = resolveSessionInitialMessage(newSession, initialMessage);
+
+        window.dispatchEvent(
+          new CustomEvent(AppEvents.ADD_ACTIVE_SESSION, {
+            detail: {
+              sessionId: newSession.id,
+              initialMessage: sessionInitialMessage,
+            },
+          })
+        );
+
+        setSearchParams((prev) => {
+          prev.set('resumeSessionId', newSession.id);
+          return prev;
+        });
+      } catch (error) {
+        console.error('Failed to create session:', error);
+        trackErrorWithContext(error, {
+          component: 'PairRouteWrapper',
+          action: 'create_session',
+          recoverable: true,
+        });
+        if (!cancelled) {
+          creationStateRef.current = 'idle';
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     initialMessage,
     recipeDeeplinkFromConfig,
     recipeIdFromConfig,
     resumeSessionId,
     setSearchParams,
-    extensionsList,
   ]);
 
   // Add resumed session to active sessions if not already there

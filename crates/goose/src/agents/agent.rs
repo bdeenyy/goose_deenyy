@@ -1866,7 +1866,19 @@ impl Agent {
                                     if !text.is_empty() {
                                         last_assistant_text = text;
                                     }
-                                    messages_to_add.push(response);
+                                    // Interim streaming chunks may be thinking-only; persisting
+                                    // them causes tool-call turns to miss reasoning_content on
+                                    // the assistant message DeepSeek expects.
+                                    let is_thinking_only = response.content.iter().all(|c| {
+                                        matches!(
+                                            c,
+                                            MessageContent::Thinking(_)
+                                                | MessageContent::RedactedThinking(_)
+                                        )
+                                    }) && !response.content.is_empty();
+                                    if !is_thinking_only {
+                                        messages_to_add.push(response);
+                                    }
                                     continue;
                                 }
 
@@ -2046,20 +2058,25 @@ impl Agent {
                                     .filter(|c| matches!(c, MessageContent::Thinking(_)))
                                     .cloned()
                                     .collect();
-                                if !thinking_content.is_empty() {
+                                let has_tool_requests_in_response = response.content.iter().any(|c| {
+                                    matches!(
+                                        c,
+                                        MessageContent::ToolRequest(_)
+                                            | MessageContent::FrontendToolRequest(_)
+                                    )
+                                });
+                                if !thinking_content.is_empty() && !has_tool_requests_in_response {
                                     let thinking_msg = Message::new(
                                         response.role.clone(),
                                         response.created,
-                                        thinking_content,
-                                    ).with_id(format!("msg_{}", Uuid::new_v4()));
+                                        thinking_content.clone(),
+                                    )
+                                    .with_id(format!("msg_{}", Uuid::new_v4()));
                                     messages_to_add.push(thinking_msg);
                                 }
 
                                 // Collect reasoning content to attach to tool request messages
-                                let reasoning_content: Vec<MessageContent> = response.content.iter()
-                                    .filter(|c| matches!(c, MessageContent::Thinking(_)))
-                                    .cloned()
-                                    .collect();
+                                let reasoning_content = thinking_content;
 
                                 for request in frontend_requests.iter().chain(remaining_requests.iter()) {
                                     if request.tool_call.is_ok() {

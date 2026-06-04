@@ -55,6 +55,7 @@ export default function Hub({
   const { extensionsList } = useConfig();
   const [workingDir, setWorkingDir] = useState(getInitialWorkingDir());
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const isCreatingSessionRef = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { time, meridiem, hour } = useClock();
 
@@ -74,10 +75,13 @@ export default function Hub({
 
   const handleSubmit = async (input: UserInput) => {
     const { msg: userMessage, images } = input;
-    if (!(images.length > 0 || userMessage.trim()) || isCreatingSession) return;
+    if (!(images.length > 0 || userMessage.trim()) || isCreatingSession || isCreatingSessionRef.current) {
+      return;
+    }
 
     const extensionConfigs = getExtensionConfigsWithOverrides(extensionsList);
     clearExtensionOverrides();
+    isCreatingSessionRef.current = true;
     setIsCreatingSession(true);
 
     try {
@@ -100,6 +104,7 @@ export default function Hub({
       });
     } catch (error) {
       console.error('Failed to create session:', error);
+      isCreatingSessionRef.current = false;
       setIsCreatingSession(false);
     }
   };

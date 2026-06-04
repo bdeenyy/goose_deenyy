@@ -65,6 +65,46 @@ fn merge_reasoning_text(prefix: &str, suffix: &str) -> String {
     format!("{prefix}{suffix}")
 }
 
+fn collect_message_reasoning(message: &Message) -> String {
+    message
+        .content
+        .iter()
+        .filter_map(|content| {
+            if let MessageContent::Thinking(thinking) = content {
+                Some(thinking.thinking.as_str())
+            } else {
+                None
+            }
+        })
+        .collect::<String>()
+}
+
+fn message_has_tool_requests(message: &Message) -> bool {
+    message.content.iter().any(|content| {
+        matches!(
+            content,
+            MessageContent::ToolRequest(_) | MessageContent::FrontendToolRequest(_)
+        )
+    })
+}
+
+/// DeepSeek/Kimi thinking+tool turns may store reasoning on a prior assistant message in the
+/// same user turn (e.g. streaming yielded thinking before tool_calls).
+fn find_reasoning_for_assistant_tool_message(messages: &[Message], current_idx: usize) -> Option<String> {
+    for idx in (0..current_idx).rev() {
+        if messages[idx].role == Role::User {
+            break;
+        }
+        if messages[idx].role == Role::Assistant {
+            let reasoning = collect_message_reasoning(&messages[idx]);
+            if !reasoning.is_empty() {
+                return Some(reasoning);
+            }
+        }
+    }
+    None
+}
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 struct DeltaToolCallFunction {
     name: Option<String>,
@@ -181,7 +221,7 @@ pub fn format_messages_with_options(
     let mut messages_spec = Vec::new();
     let mut pending_assistant_reasoning = String::new();
 
-    for message in messages {
+    for (msg_idx, message) in messages.iter().enumerate() {
         if options.preserve_thinking_context && message.role != Role::Assistant {
             pending_assistant_reasoning.clear();
         }
@@ -405,6 +445,17 @@ pub fn format_messages_with_options(
                 reasoning_text =
                     merge_reasoning_text(&pending_assistant_reasoning, &reasoning_text);
                 pending_assistant_reasoning.clear();
+            }
+
+            if reasoning_text.is_empty()
+                && message_has_tool_requests(message)
+                && converted.get("tool_calls").is_some()
+            {
+                if let Some(reasoning) =
+                    find_reasoning_for_assistant_tool_message(messages, msg_idx)
+                {
+                    reasoning_text = reasoning;
+                }
             }
         }
 
@@ -902,7 +953,6 @@ where
         let mut accumulated_reasoning_content = String::new();
         let mut think_filter = ThinkFilter::new();
         let mut saw_structured_reasoning = false;
-        let mut yielded_reasoning_content_len = 0usize;
         let mut last_signature: Option<String> = None;
         // Buffer inline <think>...</think> content until we know whether structured
         // reasoning will arrive. Emitting it immediately and then receiving
@@ -1035,7 +1085,18 @@ where
                     flush_thinking.push_str(&filtered.thinking);
                 }
                 pending_inline_thinking.clear();
-                if !filtered.content.is_empty() || !flush_thinking.is_empty() {
+                let mut reasoning_for_tools = accumulated_reasoning_content.clone();
+                if reasoning_for_tools.is_empty() {
+                    reasoning_for_tools = flush_thinking.clone();
+                }
+                // When tool calls follow, attach all reasoning to the tool message instead of
+                // emitting a separate assistant message (DeepSeek requires reasoning_content on
+                // the tool_calls message).
+                let skip_preface_thinking_yield = !tool_call_data.is_empty()
+                    && (!accumulated_reasoning_content.is_empty() || !flush_thinking.is_empty());
+                if !skip_preface_thinking_yield
+                    && (!filtered.content.is_empty() || !flush_thinking.is_empty())
+                {
                     let mut filtered_contents = Vec::new();
                     if !filtered.content.is_empty() {
                         filtered_contents.push(MessageContent::text(filtered.content));
@@ -1060,17 +1121,10 @@ where
                 }
 
                 let mut contents = Vec::new();
-                if yielded_reasoning_content_len < accumulated_reasoning_content.len() {
-                    if let Some(unyielded_reasoning) =
-                        accumulated_reasoning_content.get(yielded_reasoning_content_len..)
-                    {
-                        if !unyielded_reasoning.is_empty() {
-                            contents.push(MessageContent::thinking(unyielded_reasoning, ""));
-                        }
-                    }
+                if !reasoning_for_tools.is_empty() {
+                    contents.push(MessageContent::thinking(reasoning_for_tools, ""));
                 }
                 accumulated_reasoning_content.clear();
-                yielded_reasoning_content_len = 0;
                 let mut sorted_indices: Vec<_> = tool_call_data.keys().cloned().collect();
                 sorted_indices.sort();
 
@@ -1138,7 +1192,6 @@ where
                 if let Some(reasoning) = chunk.choices[0].delta.reasoning_text() {
                     let signature = last_signature.as_deref().unwrap_or("");
                     content.push(MessageContent::thinking(reasoning, signature));
-                    yielded_reasoning_content_len = accumulated_reasoning_content.len();
                 }
 
                 let (text_content, thought_signature) = extract_content_and_signature(chunk.choices[0].delta.content.as_ref());
@@ -1160,24 +1213,28 @@ where
                 }
 
                 if !content.is_empty() {
-                    let mut msg = Message::new(
-                        Role::Assistant,
-                        chrono::Utc::now().timestamp(),
-                        content,
-                    );
+                    let is_thinking_only =
+                        content.iter().all(|c| matches!(c, MessageContent::Thinking(_)));
+                    if !is_thinking_only {
+                        let mut msg = Message::new(
+                            Role::Assistant,
+                            chrono::Utc::now().timestamp(),
+                            content,
+                        );
 
-                    if let Some(id) = chunk.id {
-                        msg = msg.with_id(id);
+                        if let Some(id) = chunk.id {
+                            msg = msg.with_id(id);
+                        }
+
+                        yield (
+                            Some(msg),
+                            if chunk.choices[0].finish_reason.is_some() {
+                                usage
+                            } else {
+                                None
+                            },
+                        )
                     }
-
-                    yield (
-                        Some(msg),
-                        if chunk.choices[0].finish_reason.is_some() {
-                            usage
-                        } else {
-                            None
-                        },
-                    )
                 } else if usage.is_some() {
                     yield (None, usage)
                 }
@@ -1187,12 +1244,13 @@ where
         }
 
         let filtered = think_filter.finish();
-        let mut trailing_thinking = String::new();
-        if !saw_structured_reasoning {
+        let mut trailing_thinking = accumulated_reasoning_content.clone();
+        if trailing_thinking.is_empty() && !saw_structured_reasoning {
             trailing_thinking.push_str(&pending_inline_thinking);
             trailing_thinking.push_str(&filtered.thinking);
         }
         pending_inline_thinking.clear();
+        accumulated_reasoning_content.clear();
 
         if !filtered.content.is_empty() || !trailing_thinking.is_empty() {
             let mut content = Vec::new();
@@ -3081,6 +3139,35 @@ data: [DONE]"#;
 
         assert_eq!(spec.len(), 1);
         assert_eq!(spec[0]["reasoning_content"], "think once");
+        assert_eq!(spec[0]["tool_calls"][0]["function"]["name"], "test_tool");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_messages_backfills_reasoning_for_split_thinking_and_tool_messages(
+    ) -> anyhow::Result<()> {
+        // Simulates streaming that persisted thinking-only, then tool_calls without Thinking.
+        let messages = vec![
+            Message::assistant().with_content(MessageContent::thinking("deep reasoning", "")),
+            Message::assistant().with_tool_request(
+                "tool1",
+                Ok(CallToolRequestParams::new("test_tool")
+                    .with_arguments(object!({"param": "value"}))),
+            ),
+        ];
+
+        let spec = format_messages_with_options(
+            &messages,
+            &ImageFormat::OpenAi,
+            OpenAiFormatOptions {
+                preserve_thinking_context: true,
+            },
+        );
+
+        assert_eq!(spec.len(), 1);
+        assert_eq!(spec[0]["role"], "assistant");
+        assert_eq!(spec[0]["reasoning_content"], "deep reasoning");
         assert_eq!(spec[0]["tool_calls"][0]["function"]["name"], "test_tool");
 
         Ok(())
