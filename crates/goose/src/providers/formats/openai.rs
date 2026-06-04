@@ -90,7 +90,10 @@ fn message_has_tool_requests(message: &Message) -> bool {
 
 /// DeepSeek/Kimi thinking+tool turns may store reasoning on a prior assistant message in the
 /// same user turn (e.g. streaming yielded thinking before tool_calls).
-fn find_reasoning_for_assistant_tool_message(messages: &[Message], current_idx: usize) -> Option<String> {
+fn find_reasoning_for_assistant_tool_message(
+    messages: &[Message],
+    current_idx: usize,
+) -> Option<String> {
     for idx in (0..current_idx).rev() {
         if messages[idx].role == Role::User {
             break;
