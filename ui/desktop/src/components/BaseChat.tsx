@@ -100,7 +100,13 @@ export default function BaseChat({
   const isNavCollapsed = !navContext?.isNavExpanded;
   const contentClassName = cn('pr-1 pb-10 pt-12', (isMobile || isNavCollapsed) && 'pt-16');
   const { droppedFiles, setDroppedFiles, handleDrop, handleDragOver } = useFileDrop();
-  const onStreamFinish = useCallback(() => {}, []);
+  const refreshArtifactsRef = useRef<(() => Promise<void>) | null>(null);
+  const isArtifactsOpenRef = useRef(false);
+  const onStreamFinish = useCallback(() => {
+    if (isArtifactsOpenRef.current) {
+      void refreshArtifactsRef.current?.();
+    }
+  }, []);
   const [isCreateRecipeModalOpen, setIsCreateRecipeModalOpen] = useState(false);
 
   const {
@@ -131,6 +137,26 @@ export default function BaseChat({
     refresh: refreshArtifacts,
     fileCount: artifactsFileCount,
   } = useArtifactsPanel(sessionId, session?.working_dir);
+
+  useEffect(() => {
+    isArtifactsOpenRef.current = isArtifactsOpen;
+  }, [isArtifactsOpen]);
+
+  useEffect(() => {
+    refreshArtifactsRef.current = refreshArtifacts;
+  }, [refreshArtifacts]);
+
+  const prevChatStateRef = useRef(chatState);
+  useEffect(() => {
+    const wasActive =
+      prevChatStateRef.current === ChatState.Streaming ||
+      prevChatStateRef.current === ChatState.Thinking ||
+      prevChatStateRef.current === ChatState.Compacting;
+    if (wasActive && chatState === ChatState.Idle && isArtifactsOpen) {
+      void refreshArtifacts();
+    }
+    prevChatStateRef.current = chatState;
+  }, [chatState, isArtifactsOpen, refreshArtifacts]);
 
   const recipe = session?.recipe;
 

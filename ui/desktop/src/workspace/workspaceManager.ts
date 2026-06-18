@@ -53,6 +53,21 @@ function manifestPathForRoot(rootPath: string): string {
   return path.join(rootPath, 'manifest.json');
 }
 
+export function sandboxSessionRoot(contextDir: string, sessionId: string): string {
+  return path.join(contextDir, '.goose', 'sessions', sessionId);
+}
+
+async function createSandboxWorkspace(
+  contextDir: string,
+  pendingId: string
+): Promise<{ sessionRoot: string; workingDir: string }> {
+  const sessionRoot = sandboxSessionRoot(contextDir, pendingId);
+  const workingDir = path.join(sessionRoot, 'workspace');
+  await fs.mkdir(path.join(sessionRoot, 'inputs'), { recursive: true });
+  await fs.mkdir(workingDir, { recursive: true });
+  return { sessionRoot, workingDir };
+}
+
 async function runGit(cwd: string, args: string[]): Promise<string> {
   const { stdout } = await execFileAsync('git', ['-C', cwd, ...args], { timeout: 10_000 });
   return stdout.trim();
@@ -274,9 +289,10 @@ export async function resolveWorkspace(
     };
   }
 
-  const rootPath = workspaceRootForId(pendingId, request.goosePathRoot);
-  await fs.mkdir(path.join(rootPath, 'inputs'), { recursive: true });
-  let workingDir = path.join(rootPath, 'workspace');
+  const contextDir = request.explicitWorkingDir?.trim() || app.getPath('home');
+  const indexRoot = workspaceRootForId(pendingId, request.goosePathRoot);
+  let sessionRoot: string;
+  let workingDir: string;
   let branchName: string | undefined;
   let repoRoot: string | undefined;
   let profile: ResolvedWorkspaceProfile = resolvedProfile;
@@ -285,20 +301,21 @@ export async function resolveWorkspace(
     try {
       const worktree = await createGitWorktree(gitRepoRoot, pendingId);
       workingDir = worktree.workingDir;
+      sessionRoot = worktree.workingDir;
       branchName = worktree.branchName;
       repoRoot = gitRepoRoot;
       profile = 'worktree';
     } catch {
       profile = 'sandbox';
-      await fs.mkdir(workingDir, { recursive: true });
+      ({ sessionRoot, workingDir } = await createSandboxWorkspace(contextDir, pendingId));
     }
   } else {
     profile = 'sandbox';
-    await fs.mkdir(workingDir, { recursive: true });
+    ({ sessionRoot, workingDir } = await createSandboxWorkspace(contextDir, pendingId));
   }
 
   const { stagedFiles, pathMapping } = await stageExternalFiles(
-    rootPath,
+    sessionRoot,
     workingDir,
     externalFilePaths,
     request.externalFileStrategy
@@ -307,7 +324,7 @@ export async function resolveWorkspace(
   const manifest: WorkspaceManifest = {
     sessionId: pendingId,
     profile,
-    rootPath,
+    rootPath: sessionRoot,
     workingDir,
     repoRoot,
     branchName,
@@ -315,7 +332,8 @@ export async function resolveWorkspace(
     createdAt: new Date().toISOString(),
   };
 
-  await writeManifest(rootPath, manifest);
+  await fs.mkdir(indexRoot, { recursive: true });
+  await writeManifest(indexRoot, manifest);
 
   const workspaceHint = buildWorkspaceHint(manifest);
 
@@ -336,27 +354,47 @@ export async function finalizeWorkspace(request: FinalizeWorkspaceRequest): Prom
   }
 
   const root = workspacesRoot(request.goosePathRoot);
-  const pendingPath = path.join(root, pendingWorkspaceId);
-  const finalPath = path.join(root, sessionId);
+  const pendingIndexPath = path.join(root, pendingWorkspaceId);
+  const finalIndexPath = path.join(root, sessionId);
 
-  if (!fsSync.existsSync(pendingPath)) {
+  let manifest: WorkspaceManifest | null = null;
+  const pendingManifestPath = manifestPathForRoot(pendingIndexPath);
+  if (fsSync.existsSync(pendingManifestPath)) {
+    try {
+      manifest = JSON.parse(await fs.readFile(pendingManifestPath, 'utf8')) as WorkspaceManifest;
+    } catch {
+      manifest = null;
+    }
+  }
+
+  if (fsSync.existsSync(pendingIndexPath) && !fsSync.existsSync(finalIndexPath)) {
+    await fs.rename(pendingIndexPath, finalIndexPath);
+  }
+
+  if (!manifest) {
     return;
   }
-  if (fsSync.existsSync(finalPath)) {
-    return;
+
+  if (manifest.rootPath.includes(pendingWorkspaceId)) {
+    const newRootPath = manifest.rootPath.split(pendingWorkspaceId).join(sessionId);
+    if (newRootPath !== manifest.rootPath && fsSync.existsSync(manifest.rootPath)) {
+      if (!fsSync.existsSync(newRootPath)) {
+        await fs.rename(manifest.rootPath, newRootPath);
+      }
+      manifest.rootPath = newRootPath;
+      if (manifest.workingDir.includes(pendingWorkspaceId)) {
+        manifest.workingDir = manifest.workingDir.split(pendingWorkspaceId).join(sessionId);
+      }
+    }
   }
 
-  await fs.rename(pendingPath, finalPath);
-
-  const manifestPath = manifestPathForRoot(finalPath);
-  try {
-    const raw = await fs.readFile(manifestPath, 'utf8');
-    const manifest = JSON.parse(raw) as WorkspaceManifest;
-    manifest.sessionId = sessionId;
-    await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
-  } catch {
-    // ignore
-  }
+  manifest.sessionId = sessionId;
+  const manifestWritePath = fsSync.existsSync(finalIndexPath) ? finalIndexPath : pendingIndexPath;
+  await fs.writeFile(
+    manifestPathForRoot(manifestWritePath),
+    JSON.stringify(manifest, null, 2),
+    'utf8'
+  );
 }
 
 export async function cleanupWorkspace(
@@ -389,10 +427,16 @@ export async function cleanupWorkspace(
     }
   }
 
-  const rootPath = workspaceRootForId(sessionId, goosePathRoot);
+  const indexPath = workspaceRootForId(sessionId, goosePathRoot);
+  const resolvedIndexPath = path.resolve(indexPath);
+  const resolvedSessionRoot = path.resolve(manifest.rootPath);
 
-  if (fsSync.existsSync(rootPath)) {
-    await fs.rm(rootPath, { recursive: true, force: true });
+  if (resolvedSessionRoot !== resolvedIndexPath && fsSync.existsSync(manifest.rootPath)) {
+    await fs.rm(manifest.rootPath, { recursive: true, force: true });
+  }
+
+  if (fsSync.existsSync(indexPath)) {
+    await fs.rm(indexPath, { recursive: true, force: true });
   }
 }
 

@@ -1,6 +1,6 @@
 import type { ExternalFileStrategy, WorkspaceProfile } from '../utils/settings';
 import type { ResolveWorkspaceResult } from './types';
-import { applyPathMapping, prependWorkspaceHint } from './workspaceHint';
+import { applyPathMapping } from './workspaceHint';
 import type { UserInput } from '../types/message';
 
 export interface PrepareSessionWorkspaceOptions {
@@ -52,8 +52,7 @@ export function applyWorkspaceToUserInput(
   input: UserInput,
   workspace: PreparedSessionWorkspace
 ): UserInput {
-  const mappedMsg = applyPathMapping(input.msg, workspace.pathMapping);
-  const msg = prependWorkspaceHint(mappedMsg, workspace.workspaceHint);
+  const msg = applyPathMapping(input.msg, workspace.pathMapping);
   return { ...input, msg };
 }
 
