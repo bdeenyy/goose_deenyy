@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "Файлов пока нет"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "Файлы проекта не перечисляются в direct mode — откройте папку в файловом менеджере"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "Показаны только файлы, изменённые в этой сессии"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "Открыть в файловом менеджере"
   },

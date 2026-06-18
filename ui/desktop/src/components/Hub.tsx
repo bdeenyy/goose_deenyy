@@ -69,8 +69,7 @@ export default function Hub({
   const intl = useIntl();
   const { extensionsList } = useConfig();
   const [workingDir, setWorkingDir] = useState(getInitialWorkingDir());
-  const requestDir = window.appConfig?.get('REQUEST_DIR') as string | undefined;
-  const [directoryExplicitlyChosen, setDirectoryExplicitlyChosen] = useState(Boolean(requestDir));
+  const [directoryExplicitlyChosen, setDirectoryExplicitlyChosen] = useState(false);
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [pendingDroppedFiles, setPendingDroppedFiles] = useState<DroppedFile[]>([]);
   const [sessionWorkspaceProfile, setSessionWorkspaceProfile] = useState<WorkspaceProfile>('auto');

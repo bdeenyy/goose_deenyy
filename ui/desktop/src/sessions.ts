@@ -167,19 +167,21 @@ export async function startNewSession(
     allExtensions?: FixedExtensionEntry[];
   }
 ): Promise<Session> {
-  const session = await createSession(workingDir, options);
+  const { session, userInput } = await createSessionWithWorkspace({
+    workingDir,
+    userInput: initialText ? { msg: initialText, images: [] } : undefined,
+    recipeDeeplink: options?.recipeDeeplink,
+    recipeId: options?.recipeId,
+    allExtensions: options?.allExtensions,
+  });
+
   window.dispatchEvent(new CustomEvent(AppEvents.SESSION_CREATED, { detail: { session } }));
 
-  const initialMessage = initialText ? { msg: initialText, images: [] } : undefined;
-
-  const eventDetail = {
-    sessionId: session.id,
-    initialMessage,
-  };
+  const initialMessage = userInput ?? (initialText ? { msg: initialText, images: [] } : undefined);
 
   window.dispatchEvent(
     new CustomEvent(AppEvents.ADD_ACTIVE_SESSION, {
-      detail: eventDetail,
+      detail: { sessionId: session.id, initialMessage },
     })
   );
 

@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "अभी कोई फ़ाइल नहीं"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "डायरेक्ट मोड में प्रोजेक्ट फ़ाइलें सूचीबद्ध नहीं होतीं — फ़ाइल मैनेजर में फ़ोल्डर खोलें"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "केवल इस सत्र में बदली गई फ़ाइलें दिखाई जाती हैं"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "फ़ाइल मैनेजर में खोलें"
   },

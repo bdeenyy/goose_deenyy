@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "Aún no hay archivos"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "Los archivos del proyecto no se listan en modo directo — abra la carpeta en el administrador de archivos"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "Solo se muestran los archivos modificados en esta sesión"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "Abrir en el administrador de archivos"
   },

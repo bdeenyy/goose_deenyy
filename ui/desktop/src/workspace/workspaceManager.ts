@@ -172,10 +172,9 @@ async function stageExternalFiles(
 
 function resolveProfile(
   profile: WorkspaceProfile,
-  directoryExplicitlyChosen: boolean,
   hasGitContext: boolean
 ): ResolvedWorkspaceProfile {
-  if (directoryExplicitlyChosen || profile === 'direct') {
+  if (profile === 'direct') {
     return 'direct';
   }
   if (profile === 'sandbox') {
@@ -239,7 +238,6 @@ export async function resolveWorkspace(
 ): Promise<ResolveWorkspaceResult> {
   const pendingId = request.pendingId || randomUUID();
   const externalFilePaths = [...new Set((request.externalFilePaths ?? []).filter(Boolean))];
-  const directoryExplicitlyChosen = request.directoryExplicitlyChosen ?? false;
 
   let gitRepoRoot: string | null = null;
   if (externalFilePaths.length > 0) {
@@ -248,14 +246,13 @@ export async function resolveWorkspace(
     gitRepoRoot = await findGitRepoRoot(request.explicitWorkingDir);
   }
 
-  const resolvedProfile = resolveProfile(
-    request.profile,
-    directoryExplicitlyChosen,
-    gitRepoRoot !== null
-  );
+  const resolvedProfile = resolveProfile(request.profile, gitRepoRoot !== null);
 
   if (resolvedProfile === 'direct') {
     const workingDir = request.explicitWorkingDir?.trim() || app.getPath('home');
+    const rootPath = workspaceRootForId(pendingId, request.goosePathRoot);
+    await fs.mkdir(rootPath, { recursive: true });
+
     const manifest: WorkspaceManifest = {
       sessionId: pendingId,
       profile: 'direct',
@@ -264,6 +261,8 @@ export async function resolveWorkspace(
       stagedFiles: [],
       createdAt: new Date().toISOString(),
     };
+
+    await writeManifest(rootPath, manifest);
 
     return {
       workingDir,

@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "暂无文件"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "直接模式下不会列出项目文件 — 请在文件管理器中打开文件夹"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "仅显示此会话中更改的文件"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "在文件管理器中打开"
   },

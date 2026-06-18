@@ -42,6 +42,14 @@ const i18n = defineMessages({
     id: 'sessionArtifacts.empty',
     defaultMessage: 'No files yet',
   },
+  emptyDirect: {
+    id: 'sessionArtifacts.emptyDirect',
+    defaultMessage: 'Project files are not listed in direct mode — open the folder in your file manager',
+  },
+  emptyWorktree: {
+    id: 'sessionArtifacts.emptyWorktree',
+    defaultMessage: 'Only files changed in this session are shown',
+  },
   openInFinder: {
     id: 'sessionArtifacts.openInFinder',
     defaultMessage: 'Open in file manager',
@@ -98,6 +106,20 @@ interface SessionArtifactsPanelProps {
   onRefresh: () => void;
   onClose?: () => void;
   className?: string;
+}
+
+function workspaceEmptyMessage(
+  intl: ReturnType<typeof useIntl>,
+  profile: ResolvedWorkspaceProfile
+): string {
+  switch (profile) {
+    case 'direct':
+      return intl.formatMessage(i18n.emptyDirect);
+    case 'worktree':
+      return intl.formatMessage(i18n.emptyWorktree);
+    case 'sandbox':
+      return intl.formatMessage(i18n.empty);
+  }
 }
 
 function profileLabel(intl: ReturnType<typeof useIntl>, profile: ResolvedWorkspaceProfile): string {
@@ -277,7 +299,7 @@ export default function SessionArtifactsPanel({
                 <SectionTitle>{intl.formatMessage(i18n.workspace)}</SectionTitle>
                 {artifacts.workspace.length === 0 ? (
                   <p className="px-3 text-xs text-text-secondary">
-                    {intl.formatMessage(i18n.empty)}
+                    {workspaceEmptyMessage(intl, artifacts.meta.profile)}
                   </p>
                 ) : (
                   <div className="space-y-0.5">

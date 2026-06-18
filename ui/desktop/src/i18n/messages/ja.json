@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "ファイルはまだありません"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "ダイレクトモードではプロジェクトファイルは一覧表示されません — ファイルマネージャーでフォルダを開いてください"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "このセッションで変更されたファイルのみ表示されます"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "ファイルマネージャーで開く"
   },

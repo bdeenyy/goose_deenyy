@@ -1,8 +1,12 @@
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { readManifestForSession } from './workspaceManager';
-import type { ResolvedWorkspaceProfile, StagedFile } from './types';
+import type { ResolvedWorkspaceProfile, StagedFile, WorkspaceManifest } from './types';
+
+const execFileAsync = promisify(execFile);
 
 export const MAX_ARTIFACT_FILES = 500;
 
@@ -91,10 +95,94 @@ export async function walkWorkspaceFiles(
   return { files, truncated };
 }
 
+function parseGitStatusPath(line: string): string | null {
+  if (line.length < 4) {
+    return null;
+  }
+
+  let filePath = line.slice(3).trim();
+  const renameArrow = ' -> ';
+  const renameIndex = filePath.indexOf(renameArrow);
+  if (renameIndex !== -1) {
+    filePath = filePath.slice(renameIndex + renameArrow.length).trim();
+  }
+
+  if (filePath.startsWith('"') && filePath.endsWith('"')) {
+    try {
+      filePath = JSON.parse(filePath) as string;
+    } catch {
+      filePath = filePath.slice(1, -1);
+    }
+  }
+
+  return filePath || null;
+}
+
+export async function listWorktreeChangedFiles(
+  workingDir: string,
+  maxFiles = MAX_ARTIFACT_FILES
+): Promise<{ files: WorkspaceFileEntry[]; truncated: boolean }> {
+  const files: WorkspaceFileEntry[] = [];
+  let truncated = false;
+
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['-C', workingDir, 'status', '--porcelain'],
+      { timeout: 10_000 }
+    );
+
+    const seen = new Set<string>();
+    for (const line of stdout.split('\n')) {
+      if (truncated || !line.trim()) {
+        continue;
+      }
+
+      const relativePath = parseGitStatusPath(line);
+      if (!relativePath || seen.has(relativePath)) {
+        continue;
+      }
+      seen.add(relativePath);
+
+      const fullPath = path.join(workingDir, relativePath);
+      if (!fsSync.existsSync(fullPath) || !fsSync.statSync(fullPath).isFile()) {
+        continue;
+      }
+
+      files.push({ path: fullPath, relativePath });
+      if (files.length >= maxFiles) {
+        truncated = true;
+      }
+    }
+  } catch {
+    return { files: [], truncated: false };
+  }
+
+  return { files, truncated };
+}
+
 export async function buildSessionArtifactsFromManifest(
-  manifest: import('./types').WorkspaceManifest
+  manifest: WorkspaceManifest
 ): Promise<SessionArtifactsResult> {
-  const { files, truncated } = await walkWorkspaceFiles(manifest.workingDir);
+  let files: WorkspaceFileEntry[] = [];
+  let truncated = false;
+
+  switch (manifest.profile) {
+    case 'sandbox': {
+      const result = await walkWorkspaceFiles(manifest.workingDir);
+      files = result.files;
+      truncated = result.truncated;
+      break;
+    }
+    case 'worktree': {
+      const result = await listWorktreeChangedFiles(manifest.workingDir);
+      files = result.files;
+      truncated = result.truncated;
+      break;
+    }
+    case 'direct':
+      break;
+  }
 
   return {
     inputs: manifest.stagedFiles,
@@ -115,28 +203,23 @@ export async function listSessionArtifacts(
   sessionId: string,
   workingDirFallback?: string,
   goosePathRoot?: string
-): Promise<SessionArtifactsResult | null> {
+): Promise<SessionArtifactsResult> {
   const manifest = await readManifestForSession(sessionId, goosePathRoot);
   if (manifest) {
     return buildSessionArtifactsFromManifest(manifest);
   }
 
-  if (!workingDirFallback?.trim()) {
-    return null;
-  }
-
-  const workingDir = workingDirFallback.trim();
-  const { files, truncated } = await walkWorkspaceFiles(workingDir);
+  const workingDir = workingDirFallback?.trim() ?? '';
 
   return {
     inputs: [],
-    workspace: files,
+    workspace: [],
     meta: {
       profile: 'direct',
       rootPath: workingDir,
       workingDir,
     },
-    totalCount: files.length,
-    truncated,
+    totalCount: 0,
+    truncated: false,
   };
 }

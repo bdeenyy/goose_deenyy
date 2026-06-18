@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "Henüz dosya yok"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "Doğrudan modda proje dosyaları listelenmez — klasörü dosya yöneticisinde açın"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "Yalnızca bu oturumda değiştirilen dosyalar gösterilir"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "Dosya yöneticisinde aç"
   },

@@ -4931,6 +4931,12 @@
   "sessionArtifacts.empty": {
     "defaultMessage": "No files yet"
   },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "Project files are not listed in direct mode — open the folder in your file manager"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "Only files changed in this session are shown"
+  },
   "sessionArtifacts.openInFinder": {
     "defaultMessage": "Open in file manager"
   },
