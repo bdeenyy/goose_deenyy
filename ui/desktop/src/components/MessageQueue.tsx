@@ -92,6 +92,7 @@ export interface QueuedMessage {
   content: string;
   timestamp: number;
   images: ImageData[];
+  filePaths?: string[];
 }
 
 interface MessageQueueProps {

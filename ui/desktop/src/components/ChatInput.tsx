@@ -389,7 +389,11 @@ export default function ChatInput({
 
       if (shouldProcessQueue) {
         LocalMessageStorage.addMessage(messageToSend.content);
-        handleSubmit({ msg: messageToSend.content, images: messageToSend.images });
+        handleSubmit({
+          msg: messageToSend.content,
+          images: messageToSend.images,
+          filePaths: messageToSend.filePaths,
+        });
         if (shouldSendAfterStop) {
           clearPendingSendAfterStop(messageToSend.id);
         }
@@ -807,11 +811,15 @@ export default function ChatInput({
     return [...pastedImageData, ...droppedImageData];
   }, [pastedImages, allDroppedFiles]);
 
+  const getSubmittableFilePaths = useCallback((): string[] => {
+    return allDroppedFiles
+      .filter((file) => !file.isImage && !file.error && !file.isLoading)
+      .map((file) => file.path);
+  }, [allDroppedFiles]);
+
   const appendDroppedFilePaths = useCallback(
     (text: string): string => {
-      const droppedFilePaths = allDroppedFiles
-        .filter((file) => !file.isImage && !file.error && !file.isLoading)
-        .map((file) => file.path);
+      const droppedFilePaths = getSubmittableFilePaths();
 
       if (droppedFilePaths.length > 0) {
         const pathsString = droppedFilePaths.join(' ');
@@ -819,7 +827,7 @@ export default function ChatInput({
       }
       return text;
     },
-    [allDroppedFiles]
+    [getSubmittableFilePaths]
   );
 
   const clearInputState = useCallback(() => {
@@ -1039,6 +1047,7 @@ export default function ChatInput({
 
     const imageData = convertImagesToImageData();
     const contentToQueue = appendDroppedFilePaths(displayValue.trim());
+    const filePaths = getSubmittableFilePaths();
 
     const interruptionMatch = detectInterruption(displayValue.trim());
 
@@ -1054,6 +1063,7 @@ export default function ChatInput({
         content: contentToQueue,
         timestamp: Date.now(),
         images: imageData,
+        filePaths: filePaths.length > 0 ? filePaths : undefined,
       };
 
       // Add the interruption message to the front of the queue so it gets sent first
@@ -1068,6 +1078,7 @@ export default function ChatInput({
       content: contentToQueue,
       timestamp: Date.now(),
       images: imageData,
+      filePaths: filePaths.length > 0 ? filePaths : undefined,
     };
     setQueuedMessages((prev) => {
       const newQueue = [...prev, newMessage];
@@ -1109,9 +1120,7 @@ export default function ChatInput({
         handleSubmit({
           msg: textToSend,
           images: imageData,
-          filePaths: allDroppedFiles
-            .filter((file) => !file.isImage && !file.error && !file.isLoading)
-            .map((file) => file.path),
+          filePaths: getSubmittableFilePaths(),
         });
 
         // Auto-resume queue after sending a NON-interruption message (if it was paused due to interruption)
@@ -1135,8 +1144,8 @@ export default function ChatInput({
     [
       convertImagesToImageData,
       appendDroppedFilePaths,
+      getSubmittableFilePaths,
       displayValue,
-      allDroppedFiles,
       handleSubmit,
       lastInterruption,
       clearInputState,
@@ -1370,7 +1379,11 @@ export default function ChatInput({
     if (!isLoading) {
       setQueuedMessages((prev) => removeQueuedMessage(prev, messageId));
       LocalMessageStorage.addMessage(messageToSend.content);
-      handleSubmit({ msg: messageToSend.content, images: messageToSend.images });
+      handleSubmit({
+        msg: messageToSend.content,
+        images: messageToSend.images,
+        filePaths: messageToSend.filePaths,
+      });
       return;
     }
 
@@ -1393,7 +1406,11 @@ export default function ChatInput({
     if (!isLoading && queuedMessages.length > 0) {
       const nextMessage = queuedMessages[0];
       LocalMessageStorage.addMessage(nextMessage.content);
-      handleSubmit({ msg: nextMessage.content, images: nextMessage.images });
+      handleSubmit({
+        msg: nextMessage.content,
+        images: nextMessage.images,
+        filePaths: nextMessage.filePaths,
+      });
       setQueuedMessages((prev) => {
         const newQueue = prev.slice(1);
         // If queue becomes empty after processing, clear the paused state

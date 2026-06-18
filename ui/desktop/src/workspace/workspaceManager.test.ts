@@ -2,10 +2,13 @@ import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   cleanupOrphanedWorkspaces,
   cleanupWorkspace,
+  createGitWorktree,
   finalizeWorkspace,
   getWorkspaceInfo,
   readManifestForSession,
@@ -13,6 +16,8 @@ import {
   stageSessionFiles,
 } from './workspaceManager';
 import type { WorkspaceManifest } from './types';
+
+const execFileAsync = promisify(execFile);
 
 describe('workspaceManager', () => {
   const tempDirs: string[] = [];
@@ -201,5 +206,34 @@ describe('workspaceManager', () => {
 
     expect(fsSync.existsSync(sessionRoot)).toBe(false);
     expect(fsSync.existsSync(workspaceIndexPath(gooseRoot, pendingId))).toBe(false);
+  });
+
+  it('uses a unique branch name when the default worktree branch already exists', async () => {
+    const repoRoot = await makeTempDir('git-repo-');
+    await execFileAsync('git', ['init'], { cwd: repoRoot });
+    await execFileAsync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoRoot });
+    await execFileAsync('git', ['config', 'user.name', 'Test User'], { cwd: repoRoot });
+    await fs.writeFile(path.join(repoRoot, 'README.md'), '# test');
+    await execFileAsync('git', ['add', 'README.md'], { cwd: repoRoot });
+    await execFileAsync('git', ['commit', '-m', 'init'], { cwd: repoRoot });
+
+    const sessionId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    const existingBranch = 'goose/session-aaaaaaaa';
+    await execFileAsync('git', ['branch', existingBranch], { cwd: repoRoot });
+
+    const { branchName, workingDir } = await createGitWorktree(repoRoot, sessionId);
+
+    expect(branchName).toBe(`${existingBranch}-1`);
+    expect(fsSync.existsSync(workingDir)).toBe(true);
+
+    const originalRef = (
+      await execFileAsync('git', ['-C', repoRoot, 'rev-parse', existingBranch], {
+        timeout: 10_000,
+      })
+    ).stdout.trim();
+    const collisionRef = (
+      await execFileAsync('git', ['-C', repoRoot, 'rev-parse', branchName], { timeout: 10_000 })
+    ).stdout.trim();
+    expect(collisionRef).toBe(originalRef);
   });
 });

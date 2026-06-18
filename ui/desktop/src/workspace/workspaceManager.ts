@@ -88,18 +88,47 @@ function shortId(id: string): string {
   return id.replace(/-/g, '').slice(0, 8);
 }
 
+async function branchExists(repoRoot: string, branchName: string): Promise<boolean> {
+  try {
+    await execFileAsync(
+      'git',
+      ['-C', repoRoot, 'show-ref', '--verify', '--quiet', `refs/heads/${branchName}`],
+      { timeout: 10_000 }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function uniqueWorktreeBranchName(repoRoot: string, sessionId: string): Promise<string> {
+  const base = `goose/session-${shortId(sessionId)}`;
+  if (!(await branchExists(repoRoot, base))) {
+    return base;
+  }
+
+  for (let i = 1; i < 1000; i++) {
+    const candidate = `${base}-${i}`;
+    if (!(await branchExists(repoRoot, candidate))) {
+      return candidate;
+    }
+  }
+
+  return `${base}-${Date.now()}`;
+}
+
 export async function createGitWorktree(
   repoRoot: string,
   sessionId: string
 ): Promise<{ workingDir: string; branchName: string }> {
-  const branchName = `goose/session-${shortId(sessionId)}`;
+  const branchName = await uniqueWorktreeBranchName(repoRoot, sessionId);
   const worktreePath = path.join(repoRoot, '.goose', 'sessions', sessionId);
   await fs.mkdir(path.dirname(worktreePath), { recursive: true });
 
   try {
     await execFileAsync(
       'git',
-      ['-C', repoRoot, 'worktree', 'add', '-B', branchName, worktreePath],
+      ['-C', repoRoot, 'worktree', 'add', '-b', branchName, worktreePath],
       { timeout: 30_000 }
     );
   } catch (error) {
