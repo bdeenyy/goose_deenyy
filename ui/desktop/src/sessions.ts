@@ -1,4 +1,4 @@
-import { Session, startAgent, ExtensionConfig } from './api';
+import { Session, startAgent, ExtensionConfig, updateWorkingDir } from './api';
 import { DEFAULT_CHAT_TITLE } from './contexts/ChatContext';
 import type { setViewType } from './hooks/useNavigation';
 import {
@@ -141,7 +141,7 @@ export async function createSessionWithWorkspace(
     externalFileStrategy,
   });
 
-  const session = await createSession(workspace.workingDir, {
+  let session = await createSession(workspace.workingDir, {
     recipeDeeplink: options.recipeDeeplink,
     recipeId: options.recipeId,
     extensionConfigs: options.extensionConfigs,
@@ -149,6 +149,17 @@ export async function createSessionWithWorkspace(
   });
 
   await finalizeSessionWorkspace(workspace.pendingWorkspaceId, session.id);
+
+  if (workspace.profile !== 'direct') {
+    const info = await window.electron.getWorkspaceInfo(session.id);
+    const finalWorkingDir = info?.workingDir;
+    if (finalWorkingDir && finalWorkingDir !== session.working_dir) {
+      await updateWorkingDir({
+        body: { session_id: session.id, working_dir: finalWorkingDir },
+      });
+      session = { ...session, working_dir: finalWorkingDir };
+    }
+  }
 
   const userInput = options.userInput
     ? applyWorkspaceToUserInput(options.userInput, workspace)

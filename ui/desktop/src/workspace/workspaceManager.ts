@@ -229,6 +229,7 @@ export async function getWorkspaceInfo(
   return {
     profile: manifest.profile,
     rootPath: manifest.rootPath,
+    workingDir: manifest.workingDir,
     stagedFiles: manifest.stagedFiles,
   };
 }
@@ -379,7 +380,15 @@ export async function finalizeWorkspace(request: FinalizeWorkspaceRequest): Prom
     const newRootPath = manifest.rootPath.split(pendingWorkspaceId).join(sessionId);
     if (newRootPath !== manifest.rootPath && fsSync.existsSync(manifest.rootPath)) {
       if (!fsSync.existsSync(newRootPath)) {
-        await fs.rename(manifest.rootPath, newRootPath);
+        if (manifest.profile === 'worktree' && manifest.repoRoot) {
+          await execFileAsync(
+            'git',
+            ['-C', manifest.repoRoot, 'worktree', 'move', manifest.rootPath, newRootPath],
+            { timeout: 30_000 }
+          );
+        } else {
+          await fs.rename(manifest.rootPath, newRootPath);
+        }
       }
       manifest.rootPath = newRootPath;
       if (manifest.workingDir.includes(pendingWorkspaceId)) {
@@ -431,7 +440,11 @@ export async function cleanupWorkspace(
   const resolvedIndexPath = path.resolve(indexPath);
   const resolvedSessionRoot = path.resolve(manifest.rootPath);
 
-  if (resolvedSessionRoot !== resolvedIndexPath && fsSync.existsSync(manifest.rootPath)) {
+  if (
+    manifest.profile !== 'direct' &&
+    resolvedSessionRoot !== resolvedIndexPath &&
+    fsSync.existsSync(manifest.rootPath)
+  ) {
     await fs.rm(manifest.rootPath, { recursive: true, force: true });
   }
 

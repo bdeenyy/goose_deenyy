@@ -49,5 +49,6 @@ export interface FinalizeWorkspaceRequest {
 export interface WorkspaceInfo {
   profile: ResolvedWorkspaceProfile;
   rootPath: string;
+  workingDir: string;
   stagedFiles: StagedFile[];
 }

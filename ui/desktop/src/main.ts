@@ -696,9 +696,17 @@ async function handleFileOpen(filePath: string) {
     }
 
     const stats = fsSync.lstatSync(filePath);
-    const pendingFiles = stats.isFile() ? [filePath] : [];
+    let targetDir = filePath;
+    if (stats.isFile()) {
+      targetDir = path.dirname(filePath);
+    }
 
-    const newWindow = await createChat(app, { pendingFiles });
+    addRecentDir(targetDir);
+
+    const newWindow = await createChat(app, {
+      dir: targetDir,
+      ...(stats.isFile() ? { pendingFiles: [filePath] } : {}),
+    });
 
     if (newWindow) {
       newWindow.show();
