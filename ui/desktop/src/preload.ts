@@ -192,6 +192,16 @@ type ElectronAPI = {
   addRecentDir: (dir: string) => Promise<boolean>;
   listRecentDirs: () => Promise<string[]>;
   listGitWorktreeDirs: (dir: string) => Promise<string[]>;
+  hasExternalWorkspaceFiles: (options: {
+    workingDir: string;
+    filePaths: string[];
+  }) => Promise<boolean>;
+  resolveSessionWorkspace: (
+    request: Record<string, unknown>
+  ) => Promise<import('./workspace/types').ResolveWorkspaceResult>;
+  finalizeSessionWorkspace: (request: Record<string, unknown>) => Promise<void>;
+  getWorkspaceInfo: (sessionId: string) => Promise<import('./workspace/types').WorkspaceInfo | null>;
+  cleanupSessionWorkspace: (sessionId: string) => Promise<void>;
 };
 
 type AppConfigAPI = {
@@ -236,6 +246,15 @@ const electronAPI: ElectronAPI = {
   ensureDirectory: (dirPath: string) => ipcRenderer.invoke('ensure-directory', dirPath),
   listFiles: (dirPath: string, extension?: string) =>
     ipcRenderer.invoke('list-files', dirPath, extension),
+  hasExternalWorkspaceFiles: (options: { workingDir: string; filePaths: string[] }) =>
+    ipcRenderer.invoke('has-external-workspace-files', options),
+  resolveSessionWorkspace: (request: Record<string, unknown>) =>
+    ipcRenderer.invoke('resolve-session-workspace', request),
+  finalizeSessionWorkspace: (request: Record<string, unknown>) =>
+    ipcRenderer.invoke('finalize-session-workspace', request),
+  getWorkspaceInfo: (sessionId: string) => ipcRenderer.invoke('get-workspace-info', sessionId),
+  cleanupSessionWorkspace: (sessionId: string) =>
+    ipcRenderer.invoke('cleanup-session-workspace', sessionId),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   getAllowedExtensions: () => ipcRenderer.invoke('get-allowed-extensions'),
   setMenuBarIcon: (show: boolean) => ipcRenderer.invoke('set-menu-bar-icon', show),

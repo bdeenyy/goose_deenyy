@@ -53,6 +53,14 @@ import * as mesh from './mesh';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { BLOCKED_PROTOCOLS, WEB_PROTOCOLS } from './utils/urlSecurity';
 import { buildCSP } from './utils/csp';
+import {
+  cleanupOrphanedWorkspaces,
+  cleanupWorkspace,
+  finalizeWorkspace,
+  getWorkspaceInfo,
+  hasExternalWorkspaceFiles,
+  resolveWorkspace,
+} from './workspace/workspaceManager';
 
 function shouldSetupUpdater(): boolean {
   // Setup updater if either the flag is enabled OR dev updates are enabled
@@ -687,20 +695,10 @@ async function handleFileOpen(filePath: string) {
     }
 
     const stats = fsSync.lstatSync(filePath);
-    let targetDir = filePath;
+    const pendingFiles = stats.isFile() ? [filePath] : [];
 
-    // If it's a file, use its parent directory
-    if (stats.isFile()) {
-      targetDir = path.dirname(filePath);
-    }
+    const newWindow = await createChat(app, { pendingFiles });
 
-    // Add to recent directories
-    addRecentDir(targetDir);
-
-    // Create new window for the directory
-    const newWindow = await createChat(app, { dir: targetDir });
-
-    // Focus the new window
     if (newWindow) {
       newWindow.show();
       newWindow.focus();
@@ -871,11 +869,13 @@ const windowPowerSaveBlockers = new Map<number, number>(); // windowId -> blocke
 // Track pending initial messages per window
 const pendingInitialMessages = new Map<number, string>(); // windowId -> initialMessage
 const pendingInitialMessageNoAutoSubmit = new Set<number>(); // windowIds whose initialMessage should NOT auto-submit
+const pendingDroppedFiles = new Map<number, string[]>(); // windowId -> file paths from dock drop
 
 interface CreateChatOptions {
   initialMessage?: string;
   initialMessageNoAutoSubmit?: boolean;
   dir?: string;
+  pendingFiles?: string[];
   resumeSessionId?: string;
   viewType?: string;
   recipeDeeplink?: string;
@@ -895,6 +895,7 @@ const createChat = async (app: App, options: CreateChatOptions = {}) => {
     recipeId,
     scheduledJobId,
     recipeParameters,
+    pendingFiles,
   } = options;
   const settings = getSettings();
   const serverSecret = getServerSecret(settings);
@@ -1249,6 +1250,10 @@ const createChat = async (app: App, options: CreateChatOptions = {}) => {
     }
   }
 
+  if (pendingFiles && pendingFiles.length > 0) {
+    pendingDroppedFiles.set(mainWindow.id, pendingFiles);
+  }
+
   // Set up local keyboard shortcuts that only work when the window is focused
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.key === 'r' && input.meta) {
@@ -1294,6 +1299,7 @@ const createChat = async (app: App, options: CreateChatOptions = {}) => {
     windowMap.delete(windowId);
 
     pendingInitialMessages.delete(windowId);
+    pendingDroppedFiles.delete(windowId);
     pendingDeepLinks.delete(windowId);
 
     if (windowPowerSaveBlockers.has(windowId)) {
@@ -1664,6 +1670,12 @@ ipcMain.on('react-ready', (event) => {
     pendingInitialMessageNoAutoSubmit.delete(windowId);
   }
 
+  if (windowId && pendingDroppedFiles.has(windowId)) {
+    const files = pendingDroppedFiles.get(windowId)!;
+    window.webContents.send('set-pending-dropped-files', files);
+    pendingDroppedFiles.delete(windowId);
+  }
+
   if (windowId && pendingDeepLinks.has(windowId) && window) {
     const deepLinkUrl = pendingDeepLinks.get(windowId)!;
     pendingDeepLinks.delete(windowId);
@@ -1713,6 +1725,32 @@ ipcMain.handle('list-git-worktree-dirs', async (_event, dir: string) => {
   return await listGitWorktreeDirs(dir);
 });
 
+ipcMain.handle('resolve-session-workspace', async (_event, request) => {
+  return resolveWorkspace({
+    ...request,
+    goosePathRoot: appConfig.GOOSE_PATH_ROOT as string | undefined,
+  });
+});
+
+ipcMain.handle('finalize-session-workspace', async (_event, request) => {
+  await finalizeWorkspace({
+    ...request,
+    goosePathRoot: appConfig.GOOSE_PATH_ROOT as string | undefined,
+  });
+});
+
+ipcMain.handle('has-external-workspace-files', async (_event, { workingDir, filePaths }) => {
+  return hasExternalWorkspaceFiles(workingDir, filePaths);
+});
+
+ipcMain.handle('get-workspace-info', async (_event, sessionId: string) => {
+  return getWorkspaceInfo(sessionId, appConfig.GOOSE_PATH_ROOT as string | undefined);
+});
+
+ipcMain.handle('cleanup-session-workspace', async (_event, sessionId: string) => {
+  await cleanupWorkspace(sessionId, appConfig.GOOSE_PATH_ROOT as string | undefined);
+});
+
 ipcMain.handle('get-setting', (_event, key: SettingKey) => {
   const settings = getSettings();
   return settings[key];
@@ -1735,6 +1773,9 @@ const validSettingKeys: Set<string> = new Set([
   'showPricing',
   'sessionSharing',
   'seenAnnouncementIds',
+  'workspaceProfile',
+  'externalFileStrategy',
+  'rememberExternalFileChoice',
 ]);
 
 ipcMain.handle('set-setting', (_event, key: SettingKey, value: unknown) => {
@@ -2232,6 +2273,10 @@ const registerGlobalShortcuts = () => {
 
 async function appMain() {
   await configureProxy();
+
+  void cleanupOrphanedWorkspaces(appConfig.GOOSE_PATH_ROOT as string | undefined).catch((error) => {
+    log.warn('Failed to cleanup orphaned workspaces:', error);
+  });
 
   // Ensure Windows shims are available before any MCP processes are spawned
   await ensureWinShims();

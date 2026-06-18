@@ -9,6 +9,33 @@ import {
 import type { FixedExtensionEntry } from './components/ConfigContext';
 import { AppEvents } from './constants/events';
 import { decodeRecipe, Recipe } from './recipe';
+import type { ExternalFileStrategy, WorkspaceProfile } from './utils/settings';
+import {
+  applyWorkspaceToUserInput,
+  extractExternalFilePaths,
+  finalizeSessionWorkspace,
+  needsExternalFileStrategyChoice,
+  prepareSessionWorkspace,
+} from './workspace/resolveSessionWorkspace';
+import type { UserInput } from './types/message';
+
+export interface CreateSessionWithWorkspaceOptions {
+  workingDir: string;
+  directoryExplicitlyChosen?: boolean;
+  userInput?: UserInput;
+  workspaceProfile?: WorkspaceProfile;
+  externalFileStrategy?: ExternalFileStrategy;
+  resolveExternalFileStrategy?: () => Promise<ExternalFileStrategy | null>;
+  recipeDeeplink?: string;
+  recipeId?: string;
+  extensionConfigs?: ExtensionConfig[];
+  allExtensions?: FixedExtensionEntry[];
+}
+
+export interface CreateSessionWithWorkspaceResult {
+  session: Session;
+  userInput?: UserInput;
+}
 
 export function getSessionDisplayName(session: Session): string {
   return session.name || DEFAULT_CHAT_TITLE;
@@ -73,6 +100,61 @@ export async function createSession(
     throwOnError: true,
   });
   return newAgent.data;
+}
+
+export async function createSessionWithWorkspace(
+  options: CreateSessionWithWorkspaceOptions
+): Promise<CreateSessionWithWorkspaceResult> {
+  const directoryExplicitlyChosen = options.directoryExplicitlyChosen ?? false;
+  const externalFilePaths = options.userInput ? extractExternalFilePaths(options.userInput) : [];
+
+  let workspaceProfile =
+    options.workspaceProfile ??
+    ((await window.electron.getSetting('workspaceProfile')) as WorkspaceProfile);
+  let externalFileStrategy =
+    options.externalFileStrategy ??
+    ((await window.electron.getSetting('externalFileStrategy')) as ExternalFileStrategy);
+
+  const rememberChoice = await window.electron.getSetting('rememberExternalFileChoice');
+  const needsChoice = await needsExternalFileStrategyChoice(
+    options.workingDir,
+    externalFilePaths,
+    directoryExplicitlyChosen,
+    workspaceProfile
+  );
+
+  if (needsChoice && !rememberChoice && !options.externalFileStrategy) {
+    const chosen = options.resolveExternalFileStrategy
+      ? await options.resolveExternalFileStrategy()
+      : null;
+    if (!chosen) {
+      throw new Error('Session creation cancelled');
+    }
+    externalFileStrategy = chosen;
+  }
+
+  const workspace = await prepareSessionWorkspace({
+    workingDir: options.workingDir,
+    directoryExplicitlyChosen,
+    externalFilePaths,
+    workspaceProfile,
+    externalFileStrategy,
+  });
+
+  const session = await createSession(workspace.workingDir, {
+    recipeDeeplink: options.recipeDeeplink,
+    recipeId: options.recipeId,
+    extensionConfigs: options.extensionConfigs,
+    allExtensions: options.allExtensions,
+  });
+
+  await finalizeSessionWorkspace(workspace.pendingWorkspaceId, session.id);
+
+  const userInput = options.userInput
+    ? applyWorkspaceToUserInput(options.userInput, workspace)
+    : undefined;
+
+  return { session, userInput };
 }
 
 export async function startNewSession(

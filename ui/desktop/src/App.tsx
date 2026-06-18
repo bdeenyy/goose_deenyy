@@ -16,7 +16,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import AnnouncementModal from './components/AnnouncementModal';
 import TelemetryConsentPrompt from './components/TelemetryConsentPrompt';
 import OnboardingGuard from './components/onboarding/OnboardingGuard';
-import { createSession } from './sessions';
+import { createSessionWithWorkspace } from './sessions';
 
 import { ChatType } from './types/chat';
 import Hub from './components/Hub';
@@ -115,12 +115,17 @@ const PairRouteWrapper = ({
 
       (async () => {
         try {
-          const newSession = await createSession(getInitialWorkingDir(), {
+          const { session: newSession, userInput } = await createSessionWithWorkspace({
+            workingDir: getInitialWorkingDir(),
+            userInput: initialMessage,
             recipeDeeplink: recipeDeeplinkFromConfig,
             recipeId: recipeIdFromConfig,
             allExtensions: extensionsList,
           });
-          const sessionInitialMessage = resolveSessionInitialMessage(newSession, initialMessage);
+          const sessionInitialMessage = resolveSessionInitialMessage(
+            newSession,
+            userInput ?? initialMessage
+          );
 
           window.dispatchEvent(
             new CustomEvent(AppEvents.ADD_ACTIVE_SESSION, {

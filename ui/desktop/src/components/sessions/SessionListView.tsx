@@ -507,6 +507,7 @@ const SessionListView: React.FC<SessionListViewProps> = React.memo(
 
       try {
         await acpDeleteSession(sessionToDeleteId);
+        void window.electron.cleanupSessionWorkspace(sessionToDeleteId);
         toast.success(intl.formatMessage(i18n.deleteSuccess));
         window.dispatchEvent(
           new CustomEvent(AppEvents.SESSION_DELETED, { detail: { sessionId: sessionToDeleteId } })

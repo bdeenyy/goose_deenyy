@@ -12,6 +12,7 @@ import {
 import { updateWorkingDir } from '../../api';
 import { toast } from 'react-toastify';
 import { defineMessages, useIntl } from '../../i18n';
+import type { ResolvedWorkspaceProfile } from '../../workspace/types';
 
 const i18n = defineMessages({
   failedToUpdateWorkingDir: {
@@ -42,6 +43,26 @@ const i18n = defineMessages({
     id: 'dirSwitcher.noWorktreesFound',
     defaultMessage: 'No worktrees found',
   },
+  sandboxBadge: {
+    id: 'dirSwitcher.sandboxBadge',
+    defaultMessage: 'Sandbox',
+  },
+  worktreeBadge: {
+    id: 'dirSwitcher.worktreeBadge',
+    defaultMessage: 'Worktree',
+  },
+  projectBadge: {
+    id: 'dirSwitcher.projectBadge',
+    defaultMessage: 'Project',
+  },
+  openWorkspaceFolder: {
+    id: 'dirSwitcher.openWorkspaceFolder',
+    defaultMessage: 'Open workspace folder',
+  },
+  originalFiles: {
+    id: 'dirSwitcher.originalFiles',
+    defaultMessage: 'Original files',
+  },
 });
 
 interface DirSwitcherProps {
@@ -67,7 +88,31 @@ export const DirSwitcher: React.FC<DirSwitcherProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [recentDirs, setRecentDirs] = useState<string[]>([]);
   const [worktreeDirs, setWorktreeDirs] = useState<string[]>([]);
+  const [workspaceProfile, setWorkspaceProfile] = useState<ResolvedWorkspaceProfile | null>(null);
+  const [workspaceRootPath, setWorkspaceRootPath] = useState<string | null>(null);
+  const [stagedOriginalPaths, setStagedOriginalPaths] = useState<string[]>([]);
   const refreshVersionRef = useRef(0);
+
+  useEffect(() => {
+    if (!sessionId) {
+      setWorkspaceProfile(null);
+      setWorkspaceRootPath(null);
+      setStagedOriginalPaths([]);
+      return;
+    }
+
+    void window.electron.getWorkspaceInfo(sessionId).then((info) => {
+      if (!info) {
+        setWorkspaceProfile(null);
+        setWorkspaceRootPath(null);
+        setStagedOriginalPaths([]);
+        return;
+      }
+      setWorkspaceProfile(info.profile);
+      setWorkspaceRootPath(info.rootPath);
+      setStagedOriginalPaths(info.stagedFiles.map((file) => file.original));
+    });
+  }, [sessionId, workingDir]);
 
   const refreshMenuData = useCallback(async () => {
     const version = ++refreshVersionRef.current;
@@ -171,6 +216,18 @@ export const DirSwitcher: React.FC<DirSwitcherProps> = ({
     [recentDirs, workingDir]
   );
 
+  const workspaceBadgeLabel = useMemo(() => {
+    if (!workspaceProfile || workspaceProfile === 'direct') {
+      return intl.formatMessage(i18n.projectBadge);
+    }
+    if (workspaceProfile === 'worktree') {
+      return intl.formatMessage(i18n.worktreeBadge);
+    }
+    return intl.formatMessage(i18n.sandboxBadge);
+  }, [intl, workspaceProfile]);
+
+  const explorerPath = workspaceRootPath ?? workingDir;
+
   return (
     <TooltipProvider>
       <Tooltip
@@ -188,6 +245,11 @@ export const DirSwitcher: React.FC<DirSwitcherProps> = ({
                 disabled={isDirectoryChooserOpen}
               >
                 <FolderDot className="mr-1" size={16} />
+                {workspaceProfile && workspaceProfile !== 'direct' && (
+                  <span className="mr-1 rounded bg-background-accent px-1 py-0.5 text-[10px] uppercase tracking-wide">
+                    {workspaceBadgeLabel}
+                  </span>
+                )}
                 <div className="max-w-[200px] truncate">
                   {workingDir.replace(/\/+$/, '').split('/').pop() || workingDir}
                 </div>
@@ -197,12 +259,40 @@ export const DirSwitcher: React.FC<DirSwitcherProps> = ({
           <DropdownMenuContent className="w-80" side="top" align="start">
             <DropdownMenuLabel>{intl.formatMessage(i18n.currentDirectory)}</DropdownMenuLabel>
             <DropdownMenuItem
-              onSelect={() => void window.electron.openDirectoryInExplorer(workingDir)}
+              onSelect={() => void window.electron.openDirectoryInExplorer(explorerPath)}
             >
               <FolderOpen className="mr-2 h-4 w-4" />
               <span className="truncate">{workingDir}</span>
               <Check className="ml-auto h-4 w-4" />
             </DropdownMenuItem>
+
+            {workspaceRootPath && workspaceRootPath !== workingDir && (
+              <DropdownMenuItem
+                onSelect={() => void window.electron.openDirectoryInExplorer(workspaceRootPath)}
+              >
+                <FolderOpen className="mr-2 h-4 w-4" />
+                <span>{intl.formatMessage(i18n.openWorkspaceFolder)}</span>
+              </DropdownMenuItem>
+            )}
+
+            {stagedOriginalPaths.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>{intl.formatMessage(i18n.originalFiles)}</DropdownMenuLabel>
+                {stagedOriginalPaths.map((originalPath) => (
+                  <DropdownMenuItem
+                    key={`original-${originalPath}`}
+                    onSelect={() => {
+                      const parentDir = originalPath.replace(/[/\\][^/\\]+$/, '') || originalPath;
+                      void window.electron.openDirectoryInExplorer(parentDir);
+                    }}
+                  >
+                    <FolderDot className="mr-2 h-4 w-4" />
+                    <span className="truncate">{originalPath}</span>
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
 
             <DropdownMenuSeparator />
             <DropdownMenuLabel>{intl.formatMessage(i18n.gitWorktrees)}</DropdownMenuLabel>

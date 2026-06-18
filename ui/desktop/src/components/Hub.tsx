@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { IpcRendererEvent } from 'electron';
 import { defineMessages, useIntl } from '../i18n';
 import { AppEvents } from '../constants/events';
 import ChatInput from './ChatInput';
@@ -21,9 +22,11 @@ import {
   getExtensionConfigsWithOverrides,
 } from '../store/extensionOverrides';
 import { getInitialWorkingDir } from '../utils/workingDir';
-import { createSession } from '../sessions';
+import { createSessionWithWorkspace } from '../sessions';
 import LoadingGoose from './LoadingGoose';
 import { UserInput } from '../types/message';
+import { ExternalFileStrategyPrompt, useExternalFileStrategyPrompt } from './workspace/ExternalFileStrategyPrompt';
+import type { DroppedFile } from '../hooks/useFileDrop';
 
 const i18n = defineMessages({
   goodMorning: { id: 'hub.goodMorning', defaultMessage: 'Good morning' },
@@ -46,6 +49,16 @@ function useClock(): { time: string; meridiem: string; hour: number } {
   return { time, meridiem, hour };
 }
 
+function pathsToDroppedFiles(paths: string[]): DroppedFile[] {
+  return paths.map((filePath, index) => ({
+    id: `pending-${index}-${filePath}`,
+    path: filePath,
+    name: filePath.split('/').pop() || filePath,
+    type: '',
+    isImage: false,
+  }));
+}
+
 export default function Hub({
   setView,
 }: {
@@ -54,9 +67,14 @@ export default function Hub({
   const intl = useIntl();
   const { extensionsList } = useConfig();
   const [workingDir, setWorkingDir] = useState(getInitialWorkingDir());
+  const requestDir = window.appConfig?.get('REQUEST_DIR') as string | undefined;
+  const [directoryExplicitlyChosen, setDirectoryExplicitlyChosen] = useState(Boolean(requestDir));
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [pendingDroppedFiles, setPendingDroppedFiles] = useState<DroppedFile[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { time, meridiem, hour } = useClock();
+  const { open: strategyPromptOpen, prompt: promptStrategy, handleChoose, handleCancel } =
+    useExternalFileStrategyPrompt();
 
   const greeting = useMemo(() => {
     if (hour < 12) return intl.formatMessage(i18n.goodMorning);
@@ -64,13 +82,30 @@ export default function Hub({
     return intl.formatMessage(i18n.goodEvening);
   }, [intl, hour]);
 
-  // rAF is more reliable than autoFocus across async render boundaries.
   useEffect(() => {
     const frameId = requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
     return () => cancelAnimationFrame(frameId);
   }, []);
+
+  useEffect(() => {
+    const handlePendingFiles = (_event: IpcRendererEvent, ...args: unknown[]) => {
+      const filePaths = args[0];
+      if (Array.isArray(filePaths) && filePaths.length > 0) {
+        setPendingDroppedFiles(pathsToDroppedFiles(filePaths as string[]));
+      }
+    };
+    window.electron.on('set-pending-dropped-files', handlePendingFiles);
+    return () => {
+      window.electron.off('set-pending-dropped-files', handlePendingFiles);
+    };
+  }, []);
+
+  const handleWorkingDirChange = (newDir: string) => {
+    setWorkingDir(newDir);
+    setDirectoryExplicitlyChosen(true);
+  };
 
   const handleSubmit = async (input: UserInput) => {
     const { msg: userMessage, images } = input;
@@ -81,24 +116,34 @@ export default function Hub({
     setIsCreatingSession(true);
 
     try {
-      const session = await createSession(workingDir, {
+      const { session, userInput } = await createSessionWithWorkspace({
+        workingDir,
+        directoryExplicitlyChosen,
+        userInput: input,
         extensionConfigs,
         allExtensions: extensionConfigs.length > 0 ? undefined : extensionsList,
+        resolveExternalFileStrategy: promptStrategy,
       });
+
+      const initialMessage = userInput ?? { msg: userMessage, images };
 
       window.dispatchEvent(new CustomEvent(AppEvents.SESSION_CREATED));
       window.dispatchEvent(
         new CustomEvent(AppEvents.ADD_ACTIVE_SESSION, {
-          detail: { sessionId: session.id, initialMessage: { msg: userMessage, images } },
+          detail: { sessionId: session.id, initialMessage },
         })
       );
 
       setView('pair', {
         disableAnimation: true,
         resumeSessionId: session.id,
-        initialMessage: { msg: userMessage, images },
+        initialMessage,
       });
     } catch (error) {
+      if (error instanceof Error && error.message === 'Session creation cancelled') {
+        setIsCreatingSession(false);
+        return;
+      }
       console.error('Failed to create session:', error);
       setIsCreatingSession(false);
     }
@@ -106,6 +151,12 @@ export default function Hub({
 
   return (
     <div className="flex flex-col h-full min-h-0 items-center justify-center px-6 relative">
+      <ExternalFileStrategyPrompt
+        open={strategyPromptOpen}
+        onChoose={handleChoose}
+        onCancel={handleCancel}
+      />
+
       <div className="w-full max-w-2xl">
         <div className="flex items-baseline gap-2 mb-1">
           <span className="text-6xl font-light text-text-primary tracking-tight tabular-nums">
@@ -126,12 +177,12 @@ export default function Hub({
             totalTokens={0}
             accumulatedInputTokens={0}
             accumulatedOutputTokens={0}
-            droppedFiles={[]}
-            onFilesProcessed={() => {}}
+            droppedFiles={pendingDroppedFiles}
+            onFilesProcessed={() => setPendingDroppedFiles([])}
             messages={[]}
             disableAnimation={false}
             toolCount={0}
-            onWorkingDirChange={setWorkingDir}
+            onWorkingDirChange={handleWorkingDirChange}
             inputRef={inputRef}
           />
         </ChatInputCard>

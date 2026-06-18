@@ -1106,7 +1106,13 @@ export default function ChatInput({
           }
         }
 
-        handleSubmit({ msg: textToSend, images: imageData });
+        handleSubmit({
+          msg: textToSend,
+          images: imageData,
+          filePaths: allDroppedFiles
+            .filter((file) => !file.isImage && !file.error && !file.isLoading)
+            .map((file) => file.path),
+        });
 
         // Auto-resume queue after sending a NON-interruption message (if it was paused due to interruption)
         if (

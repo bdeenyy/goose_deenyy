@@ -25,6 +25,7 @@ export interface ImageData {
 export interface UserInput {
   msg: string;
   images: ImageData[];
+  filePaths?: string[];
 }
 
 export function createUserMessage(text: string, images?: ImageData[]): Message {

@@ -30,6 +30,9 @@ export interface SessionSharingConfig {
 
 export type LanguageSetting = 'system' | 'en' | 'es' | 'hi' | 'ja' | 'ru' | 'tr' | 'zh-CN';
 
+export type WorkspaceProfile = 'auto' | 'sandbox' | 'worktree' | 'direct';
+export type ExternalFileStrategy = 'copy' | 'reference' | 'symlink';
+
 export interface Settings {
   // Desktop app settings
   showMenuBarIcon: boolean;
@@ -49,6 +52,9 @@ export interface Settings {
   showPricing: boolean;
   sessionSharing: SessionSharingConfig;
   seenAnnouncementIds: string[];
+  workspaceProfile: WorkspaceProfile;
+  externalFileStrategy: ExternalFileStrategy;
+  rememberExternalFileChoice: boolean;
 }
 
 export type SettingKey = keyof Settings;
@@ -92,6 +98,9 @@ export const defaultSettings: Settings = {
     baseUrl: '',
   },
   seenAnnouncementIds: [],
+  workspaceProfile: 'auto',
+  externalFileStrategy: 'copy',
+  rememberExternalFileChoice: false,
 };
 
 export function getKeyboardShortcuts(settings: Settings): KeyboardShortcuts {

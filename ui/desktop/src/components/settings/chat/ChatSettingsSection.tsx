@@ -4,6 +4,7 @@ import { SecurityToggle } from '../security/SecurityToggle';
 import { ResponseStylesSection } from '../response_styles/ResponseStylesSection';
 import { GoosehintsSection } from './GoosehintsSection';
 import { SpellcheckToggle } from './SpellcheckToggle';
+import { WorkspaceSettingsSection } from './WorkspaceSettingsSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { defineMessages, useIntl } from '../../../i18n';
 
@@ -44,6 +45,12 @@ export default function ChatSettingsSection({ sessionId }: { sessionId?: string 
       <Card className="pb-2 rounded-lg">
         <CardContent className="px-2">
           <GoosehintsSection />
+        </CardContent>
+      </Card>
+
+      <Card className="pb-2 rounded-lg">
+        <CardContent className="px-2">
+          <WorkspaceSettingsSection />
         </CardContent>
       </Card>
 
