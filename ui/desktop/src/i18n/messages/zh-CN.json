@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "刷新"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "刷新中…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "暂无文件"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "路径已复制"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "无法在文件管理器中打开路径"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "外部"

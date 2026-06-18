@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "更新"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "更新中…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "ファイルはまだありません"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "パスをコピーしました"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "ファイルマネージャーでパスを開けませんでした"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "外部"

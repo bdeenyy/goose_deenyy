@@ -2829,13 +2829,37 @@ async function appMain() {
 
   ipcMain.handle('open-directory-in-explorer', async (_event, targetPath: string) => {
     try {
-      if (fsSync.existsSync(targetPath) && fsSync.statSync(targetPath).isFile()) {
-        shell.showItemInFolder(targetPath);
+      const trimmed = targetPath?.trim();
+      if (!trimmed) {
+        return false;
+      }
+
+      let resolved = path.resolve(trimmed);
+      if (!fsSync.existsSync(resolved)) {
+        const parent = path.dirname(resolved);
+        if (!fsSync.existsSync(parent)) {
+          log.warn(`Path does not exist: ${trimmed}`);
+          return false;
+        }
+        resolved = parent;
+      }
+
+      if (fsSync.statSync(resolved).isFile()) {
+        shell.showItemInFolder(resolved);
         return true;
       }
-      return !!(await shell.openPath(targetPath));
+
+      if (process.platform === 'darwin') {
+        await new Promise<void>((resolve, reject) => {
+          execFile('open', [resolved], (error) => (error ? reject(error) : resolve()));
+        });
+        return true;
+      }
+
+      const error = await shell.openPath(resolved);
+      return error === '';
     } catch (error) {
-      console.error('Error opening directory in explorer:', error);
+      log.error('Error opening path in explorer:', error);
       return false;
     }
   });

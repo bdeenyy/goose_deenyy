@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "रीफ़्रेश"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "रीफ़्रेश हो रहा है…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "अभी कोई फ़ाइल नहीं"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "पथ कॉपी हो गया"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "फ़ाइल मैनेजर में पथ नहीं खोला जा सका"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "बाहरी"

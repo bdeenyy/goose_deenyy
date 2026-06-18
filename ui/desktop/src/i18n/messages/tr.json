@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "Yenile"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "Yenileniyor…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "Henüz dosya yok"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "Yol kopyalandı"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "Yol dosya yöneticisinde açılamadı"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "Harici"

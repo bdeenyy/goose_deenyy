@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "Refresh"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "Refreshing…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "No files yet"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "Path copied"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "Could not open path in file manager"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "External"

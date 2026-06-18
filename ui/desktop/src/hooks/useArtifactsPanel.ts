@@ -3,6 +3,14 @@ import type { SessionArtifactsResult } from '../workspace/artifactScanner';
 
 const ARTIFACTS_PANEL_OPEN_KEY = 'artifacts_panel_open';
 const NARROW_WINDOW_THRESHOLD = 900;
+const MIN_REFRESH_SPINNER_MS = 400;
+
+async function ensureMinDuration(startedAt: number, minMs: number): Promise<void> {
+  const elapsed = Date.now() - startedAt;
+  if (elapsed < minMs) {
+    await new Promise((resolve) => setTimeout(resolve, minMs - elapsed));
+  }
+}
 
 export function useArtifactsPanel(sessionId: string | null, workingDir?: string) {
   const [isOpen, setIsOpenState] = useState<boolean>(() => {
@@ -31,6 +39,7 @@ export function useArtifactsPanel(sessionId: string | null, workingDir?: string)
       return;
     }
 
+    const startedAt = Date.now();
     setIsLoading(true);
     try {
       const result = await window.electron.listSessionArtifacts(sessionId, workingDir);
@@ -38,6 +47,7 @@ export function useArtifactsPanel(sessionId: string | null, workingDir?: string)
     } catch {
       setArtifacts(null);
     } finally {
+      await ensureMinDuration(startedAt, MIN_REFRESH_SPINNER_MS);
       setIsLoading(false);
     }
   }, [sessionId, workingDir]);

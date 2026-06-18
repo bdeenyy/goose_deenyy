@@ -38,6 +38,10 @@ const i18n = defineMessages({
     id: 'sessionArtifacts.refresh',
     defaultMessage: 'Refresh',
   },
+  refreshing: {
+    id: 'sessionArtifacts.refreshing',
+    defaultMessage: 'Refreshing…',
+  },
   empty: {
     id: 'sessionArtifacts.empty',
     defaultMessage: 'No files yet',
@@ -61,6 +65,10 @@ const i18n = defineMessages({
   copiedPath: {
     id: 'sessionArtifacts.copiedPath',
     defaultMessage: 'Path copied',
+  },
+  openFailed: {
+    id: 'sessionArtifacts.openFailed',
+    defaultMessage: 'Could not open path in file manager',
   },
   externalBadge: {
     id: 'sessionArtifacts.externalBadge',
@@ -174,15 +182,15 @@ function FileRow({
       <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
-          className="rounded p-1 text-text-secondary hover:bg-background-primary hover:text-text-primary"
+          className="no-drag rounded p-1 text-text-secondary hover:bg-background-primary hover:text-text-primary"
           title={intl.formatMessage(i18n.openInFinder)}
-          onClick={() => onOpen(path)}
+          onClick={() => void onOpen(path)}
         >
           <ExternalLink className="size-3.5" />
         </button>
         <button
           type="button"
-          className="rounded p-1 text-text-secondary hover:bg-background-primary hover:text-text-primary"
+          className="no-drag rounded p-1 text-text-secondary hover:bg-background-primary hover:text-text-primary"
           title={intl.formatMessage(i18n.copyPath)}
           onClick={() => onCopy(path)}
         >
@@ -210,9 +218,15 @@ export default function SessionArtifactsPanel({
 }: SessionArtifactsPanelProps) {
   const intl = useIntl();
 
-  const handleOpen = useCallback((filePath: string) => {
-    void window.electron.openDirectoryInExplorer(filePath);
-  }, []);
+  const handleOpen = useCallback(
+    async (filePath: string) => {
+      const opened = await window.electron.openDirectoryInExplorer(filePath);
+      if (!opened) {
+        toast.error(intl.formatMessage(i18n.openFailed));
+      }
+    },
+    [intl]
+  );
 
   const handleCopy = useCallback(
     async (filePath: string) => {
@@ -235,7 +249,7 @@ export default function SessionArtifactsPanel({
         className
       )}
     >
-      <div className="flex items-center justify-between border-b border-border-primary px-3 py-2.5">
+      <div className="no-drag flex items-center justify-between border-b border-border-primary px-3 py-2.5">
         <div className="flex items-center gap-2">
           <Sparkles className="size-4 text-text-secondary" />
           <span className="text-sm font-medium text-text-primary">
@@ -247,9 +261,11 @@ export default function SessionArtifactsPanel({
             variant="ghost"
             size="xs"
             shape="round"
-            onClick={onRefresh}
+            className="no-drag active:scale-95"
+            onClick={() => void onRefresh()}
             disabled={isLoading}
             title={intl.formatMessage(i18n.refresh)}
+            aria-busy={isLoading}
           >
             {isLoading ? (
               <LoaderCircle className="size-3.5 animate-spin" />
@@ -265,7 +281,13 @@ export default function SessionArtifactsPanel({
         </div>
       </div>
 
-      <ScrollArea className="min-h-0 flex-1" paddingX={1} paddingY={2}>
+      <ScrollArea className="relative min-h-0 flex-1" paddingX={1} paddingY={2}>
+        {isLoading && (
+          <div className="flex items-center gap-2 border-b border-border-primary px-3 py-2 text-xs text-text-secondary">
+            <LoaderCircle className="size-3.5 shrink-0 animate-spin" />
+            <span>{intl.formatMessage(i18n.refreshing)}</span>
+          </div>
+        )}
         {!hasContent && !isLoading ? (
           <p className="px-3 py-6 text-center text-sm text-text-secondary">
             {intl.formatMessage(i18n.empty)}
@@ -394,15 +416,15 @@ function MetaRow({
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             type="button"
-            className="rounded p-1 text-text-secondary hover:text-text-primary"
+            className="no-drag rounded p-1 text-text-secondary hover:text-text-primary"
             title={intl.formatMessage(i18n.openInFinder)}
-            onClick={() => onOpen(path)}
+            onClick={() => void onOpen(path)}
           >
             <FolderOpen className="size-3.5" />
           </button>
           <button
             type="button"
-            className="rounded p-1 text-text-secondary hover:text-text-primary"
+            className="no-drag rounded p-1 text-text-secondary hover:text-text-primary"
             title={intl.formatMessage(i18n.copyPath)}
             onClick={() => onCopy(path)}
           >

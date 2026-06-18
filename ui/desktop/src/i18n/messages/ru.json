@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "Обновить"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "Обновление…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "Файлов пока нет"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "Путь скопирован"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "Не удалось открыть путь в файловом менеджере"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "Внешний"

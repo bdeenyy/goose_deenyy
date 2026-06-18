@@ -4928,6 +4928,9 @@
   "sessionArtifacts.refresh": {
     "defaultMessage": "Actualizar"
   },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "Actualizando…"
+  },
   "sessionArtifacts.empty": {
     "defaultMessage": "Aún no hay archivos"
   },
@@ -4945,6 +4948,9 @@
   },
   "sessionArtifacts.copiedPath": {
     "defaultMessage": "Ruta copiada"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "No se pudo abrir la ruta en el administrador de archivos"
   },
   "sessionArtifacts.externalBadge": {
     "defaultMessage": "Externo"
