@@ -974,8 +974,23 @@
   "dirSwitcher.openInFinder": {
     "defaultMessage": "फ़ाइल प्रबंधक में खोलें"
   },
+  "dirSwitcher.openWorkspaceFolder": {
+    "defaultMessage": "वर्कस्पेस फ़ोल्डर खोलें"
+  },
+  "dirSwitcher.originalFiles": {
+    "defaultMessage": "मूल फ़ाइलें"
+  },
+  "dirSwitcher.projectBadge": {
+    "defaultMessage": "प्रोजेक्ट"
+  },
   "dirSwitcher.recentDirectories": {
     "defaultMessage": "हाल की निर्देशिकाएँ"
+  },
+  "dirSwitcher.sandboxBadge": {
+    "defaultMessage": "सैंडबॉक्स"
+  },
+  "dirSwitcher.worktreeBadge": {
+    "defaultMessage": "वर्कट्री"
   },
   "elicitationRequest.accept": {
     "defaultMessage": "स्वीकार करो"
@@ -1264,6 +1279,33 @@
   },
   "externalBackendSection.useExternalServerDescription": {
     "defaultMessage": "कहीं और चल रहे goose सर्वर से कनेक्ट करें (ऐप पुनरारंभ की आवश्यकता है)"
+  },
+  "externalFileStrategy.copy": {
+    "defaultMessage": "वर्कस्पेस में कॉपी करें (अनुशंसित)"
+  },
+  "externalFileStrategy.copyDetail": {
+    "defaultMessage": "सुरक्षित — मूल फ़ाइलें अप्रभावित रहती हैं।"
+  },
+  "externalFileStrategy.description": {
+    "defaultMessage": "ये फ़ाइलें सत्र वर्कस्पेस के बाहर हैं। चुनें कि goose उन्हें कैसे एक्सेस करे।"
+  },
+  "externalFileStrategy.reference": {
+    "defaultMessage": "केवल-पढ़ने योग्य संदर्भ"
+  },
+  "externalFileStrategy.referenceDetail": {
+    "defaultMessage": "मूल पथ उपयोग करें; goose केवल वर्कस्पेस में लिखता है।"
+  },
+  "externalFileStrategy.remember": {
+    "defaultMessage": "मेरी पसंद याद रखें"
+  },
+  "externalFileStrategy.symlink": {
+    "defaultMessage": "वर्कस्पेस में लिंक करें"
+  },
+  "externalFileStrategy.symlinkDetail": {
+    "defaultMessage": "स्थान बचाता है; बदलाव मूल फ़ाइलों को प्रभावित कर सकते हैं।"
+  },
+  "externalFileStrategy.title": {
+    "defaultMessage": "संलग्न फ़ाइलों को कैसे संभाला जाए?"
   },
   "freeOptionCards.chooseOption": {
     "defaultMessage": "आरंभ करने के लिए एक विकल्प चुनें."
@@ -4828,5 +4870,41 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "संपादित संदेश के साथ एक नया सत्र बनाएं"
+  },
+  "workspaceSettings.description": {
+    "defaultMessage": "नियंत्रित करें कि goose प्रत्येक सत्र को आपकी फ़ाइलों और प्रोजेक्ट्स से कैसे अलग करता है।"
+  },
+  "workspaceSettings.profileAuto": {
+    "defaultMessage": "ऑटो (git रिपो में worktree, अन्यथा सैंडबॉक्स)"
+  },
+  "workspaceSettings.profileDirect": {
+    "defaultMessage": "प्रत्यक्ष (कोई अलगाव नहीं)"
+  },
+  "workspaceSettings.profileLabel": {
+    "defaultMessage": "अलगाव मोड"
+  },
+  "workspaceSettings.profileSandbox": {
+    "defaultMessage": "हमेशा सैंडबॉक्स"
+  },
+  "workspaceSettings.profileWorktree": {
+    "defaultMessage": "git worktree प्राथमिकता"
+  },
+  "workspaceSettings.rememberLabel": {
+    "defaultMessage": "बाहरी फ़ाइल विकल्प याद रखें"
+  },
+  "workspaceSettings.strategyCopy": {
+    "defaultMessage": "वर्कस्पेस में कॉपी करें"
+  },
+  "workspaceSettings.strategyLabel": {
+    "defaultMessage": "बाहरी फ़ाइलों का डिफ़ॉल्ट"
+  },
+  "workspaceSettings.strategyReference": {
+    "defaultMessage": "केवल-पढ़ने योग्य संदर्भ"
+  },
+  "workspaceSettings.strategySymlink": {
+    "defaultMessage": "वर्कस्पेस में सिमलिंक"
+  },
+  "workspaceSettings.title": {
+    "defaultMessage": "सत्र वर्कस्पेस"
   }
 }

@@ -974,8 +974,23 @@
   "dirSwitcher.openInFinder": {
     "defaultMessage": "ファイルマネージャーで開く"
   },
+  "dirSwitcher.openWorkspaceFolder": {
+    "defaultMessage": "ワークスペースフォルダを開く"
+  },
+  "dirSwitcher.originalFiles": {
+    "defaultMessage": "元のファイル"
+  },
+  "dirSwitcher.projectBadge": {
+    "defaultMessage": "プロジェクト"
+  },
   "dirSwitcher.recentDirectories": {
     "defaultMessage": "最近のディレクトリ"
+  },
+  "dirSwitcher.sandboxBadge": {
+    "defaultMessage": "サンドボックス"
+  },
+  "dirSwitcher.worktreeBadge": {
+    "defaultMessage": "ワークツリー"
   },
   "elicitationRequest.accept": {
     "defaultMessage": "承諾"
@@ -1264,6 +1279,33 @@
   },
   "externalBackendSection.useExternalServerDescription": {
     "defaultMessage": "別の場所で実行中の goose サーバーに接続します（アプリの再起動が必要）"
+  },
+  "externalFileStrategy.copy": {
+    "defaultMessage": "ワークスペースにコピー（推奨）"
+  },
+  "externalFileStrategy.copyDetail": {
+    "defaultMessage": "安全 — 元のファイルは変更されません。"
+  },
+  "externalFileStrategy.description": {
+    "defaultMessage": "これらのファイルはセッションワークスペースの外にあります。goose のアクセス方法を選択してください。"
+  },
+  "externalFileStrategy.reference": {
+    "defaultMessage": "読み取り専用参照"
+  },
+  "externalFileStrategy.referenceDetail": {
+    "defaultMessage": "元のパスを使用；goose はワークスペース内にのみ書き込みます。"
+  },
+  "externalFileStrategy.remember": {
+    "defaultMessage": "選択を記憶する"
+  },
+  "externalFileStrategy.symlink": {
+    "defaultMessage": "ワークスペースにリンク"
+  },
+  "externalFileStrategy.symlinkDetail": {
+    "defaultMessage": "容量を節約；変更が元のファイルに影響する場合があります。"
+  },
+  "externalFileStrategy.title": {
+    "defaultMessage": "添付ファイルをどのように扱いますか？"
   },
   "freeOptionCards.chooseOption": {
     "defaultMessage": "開始するオプションを選択してください。"
@@ -4828,5 +4870,41 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "編集したメッセージで新しいセッションを作成"
+  },
+  "workspaceSettings.description": {
+    "defaultMessage": "goose が各セッションをファイルやプロジェクトからどのように分離するかを制御します。"
+  },
+  "workspaceSettings.profileAuto": {
+    "defaultMessage": "自動（git リポジトリでは worktree、それ以外はサンドボックス）"
+  },
+  "workspaceSettings.profileDirect": {
+    "defaultMessage": "直接（分離なし）"
+  },
+  "workspaceSettings.profileLabel": {
+    "defaultMessage": "分離モード"
+  },
+  "workspaceSettings.profileSandbox": {
+    "defaultMessage": "常にサンドボックス"
+  },
+  "workspaceSettings.profileWorktree": {
+    "defaultMessage": "git worktree を優先"
+  },
+  "workspaceSettings.rememberLabel": {
+    "defaultMessage": "外部ファイルの選択を記憶"
+  },
+  "workspaceSettings.strategyCopy": {
+    "defaultMessage": "ワークスペースにコピー"
+  },
+  "workspaceSettings.strategyLabel": {
+    "defaultMessage": "外部ファイルのデフォルト"
+  },
+  "workspaceSettings.strategyReference": {
+    "defaultMessage": "読み取り専用参照"
+  },
+  "workspaceSettings.strategySymlink": {
+    "defaultMessage": "ワークスペースにシンボリックリンク"
+  },
+  "workspaceSettings.title": {
+    "defaultMessage": "セッションワークスペース"
   }
 }

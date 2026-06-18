@@ -974,8 +974,23 @@
   "dirSwitcher.openInFinder": {
     "defaultMessage": "Abrir en el gestor de archivos"
   },
+  "dirSwitcher.openWorkspaceFolder": {
+    "defaultMessage": "Abrir carpeta del workspace"
+  },
+  "dirSwitcher.originalFiles": {
+    "defaultMessage": "Archivos originales"
+  },
+  "dirSwitcher.projectBadge": {
+    "defaultMessage": "Proyecto"
+  },
   "dirSwitcher.recentDirectories": {
     "defaultMessage": "Directorios recientes"
+  },
+  "dirSwitcher.sandboxBadge": {
+    "defaultMessage": "Sandbox"
+  },
+  "dirSwitcher.worktreeBadge": {
+    "defaultMessage": "Worktree"
   },
   "elicitationRequest.accept": {
     "defaultMessage": "Aceptar"
@@ -1264,6 +1279,33 @@
   },
   "externalBackendSection.useExternalServerDescription": {
     "defaultMessage": "Conéctate a un servidor goose que se ejecuta en otro lugar (requiere reiniciar la app)"
+  },
+  "externalFileStrategy.copy": {
+    "defaultMessage": "Copiar al workspace (recomendado)"
+  },
+  "externalFileStrategy.copyDetail": {
+    "defaultMessage": "Seguro: los originales no se modifican."
+  },
+  "externalFileStrategy.description": {
+    "defaultMessage": "Estos archivos están fuera del workspace de la sesión. Elige cómo debe acceder goose a ellos."
+  },
+  "externalFileStrategy.reference": {
+    "defaultMessage": "Referencia de solo lectura"
+  },
+  "externalFileStrategy.referenceDetail": {
+    "defaultMessage": "Usar rutas originales; goose escribe solo en el workspace."
+  },
+  "externalFileStrategy.remember": {
+    "defaultMessage": "Recordar mi elección"
+  },
+  "externalFileStrategy.symlink": {
+    "defaultMessage": "Enlace al workspace"
+  },
+  "externalFileStrategy.symlinkDetail": {
+    "defaultMessage": "Ahorra espacio; los cambios pueden afectar a los originales."
+  },
+  "externalFileStrategy.title": {
+    "defaultMessage": "¿Cómo deben gestionarse los archivos adjuntos?"
   },
   "freeOptionCards.chooseOption": {
     "defaultMessage": "Elige una opción para empezar."
@@ -4828,5 +4870,41 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Crear una nueva sesión con el mensaje editado"
+  },
+  "workspaceSettings.description": {
+    "defaultMessage": "Controla cómo goose aísla cada sesión de tus archivos y proyectos."
+  },
+  "workspaceSettings.profileAuto": {
+    "defaultMessage": "Automático (worktree en repos git, si no sandbox)"
+  },
+  "workspaceSettings.profileDirect": {
+    "defaultMessage": "Directo (sin aislamiento)"
+  },
+  "workspaceSettings.profileLabel": {
+    "defaultMessage": "Modo de aislamiento"
+  },
+  "workspaceSettings.profileSandbox": {
+    "defaultMessage": "Siempre sandbox"
+  },
+  "workspaceSettings.profileWorktree": {
+    "defaultMessage": "Preferir git worktree"
+  },
+  "workspaceSettings.rememberLabel": {
+    "defaultMessage": "Recordar elección para archivos externos"
+  },
+  "workspaceSettings.strategyCopy": {
+    "defaultMessage": "Copiar al workspace"
+  },
+  "workspaceSettings.strategyLabel": {
+    "defaultMessage": "Archivos externos por defecto"
+  },
+  "workspaceSettings.strategyReference": {
+    "defaultMessage": "Solo lectura"
+  },
+  "workspaceSettings.strategySymlink": {
+    "defaultMessage": "Symlink al workspace"
+  },
+  "workspaceSettings.title": {
+    "defaultMessage": "Workspace de sesión"
   }
 }

@@ -974,8 +974,23 @@
   "dirSwitcher.openInFinder": {
     "defaultMessage": "Dosya yöneticisinde aç"
   },
+  "dirSwitcher.openWorkspaceFolder": {
+    "defaultMessage": "Workspace klasörünü aç"
+  },
+  "dirSwitcher.originalFiles": {
+    "defaultMessage": "Orijinal dosyalar"
+  },
+  "dirSwitcher.projectBadge": {
+    "defaultMessage": "Proje"
+  },
   "dirSwitcher.recentDirectories": {
     "defaultMessage": "Son dizinler"
+  },
+  "dirSwitcher.sandboxBadge": {
+    "defaultMessage": "Sandbox"
+  },
+  "dirSwitcher.worktreeBadge": {
+    "defaultMessage": "Worktree"
   },
   "elicitationRequest.accept": {
     "defaultMessage": "Kabul et"
@@ -1264,6 +1279,33 @@
   },
   "externalBackendSection.useExternalServerDescription": {
     "defaultMessage": "Başka bir yerde çalışan bir goose sunucusuna bağlanın (uygulamanın yeniden başlatılmasını gerektirir)"
+  },
+  "externalFileStrategy.copy": {
+    "defaultMessage": "Workspace'e kopyala (önerilen)"
+  },
+  "externalFileStrategy.copyDetail": {
+    "defaultMessage": "Güvenli — orijinaller değiştirilmez."
+  },
+  "externalFileStrategy.description": {
+    "defaultMessage": "Bu dosyalar oturum workspace'inin dışında. goose'un bunlara nasıl erişeceğini seçin."
+  },
+  "externalFileStrategy.reference": {
+    "defaultMessage": "Salt okunur referans"
+  },
+  "externalFileStrategy.referenceDetail": {
+    "defaultMessage": "Orijinal yolları kullan; goose yalnızca workspace'e yazar."
+  },
+  "externalFileStrategy.remember": {
+    "defaultMessage": "Seçimimi hatırla"
+  },
+  "externalFileStrategy.symlink": {
+    "defaultMessage": "Workspace'e bağla"
+  },
+  "externalFileStrategy.symlinkDetail": {
+    "defaultMessage": "Yer tasarrufu sağlar; değişiklikler orijinalleri etkileyebilir."
+  },
+  "externalFileStrategy.title": {
+    "defaultMessage": "Ekli dosyalar nasıl işlensin?"
   },
   "freeOptionCards.chooseOption": {
     "defaultMessage": "Başlamak için bir seçenek seçin."
@@ -4828,5 +4870,41 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Düzenlenen mesajla yeni bir oturum oluşturun"
+  },
+  "workspaceSettings.description": {
+    "defaultMessage": "goose'un her oturumu dosyalarınızdan ve projelerinizden nasıl izole ettiğini kontrol edin."
+  },
+  "workspaceSettings.profileAuto": {
+    "defaultMessage": "Otomatik (git depolarında worktree, aksi halde sandbox)"
+  },
+  "workspaceSettings.profileDirect": {
+    "defaultMessage": "Doğrudan (izolasyon yok)"
+  },
+  "workspaceSettings.profileLabel": {
+    "defaultMessage": "İzolasyon modu"
+  },
+  "workspaceSettings.profileSandbox": {
+    "defaultMessage": "Her zaman sandbox"
+  },
+  "workspaceSettings.profileWorktree": {
+    "defaultMessage": "Git worktree tercih et"
+  },
+  "workspaceSettings.rememberLabel": {
+    "defaultMessage": "Harici dosya seçimini hatırla"
+  },
+  "workspaceSettings.strategyCopy": {
+    "defaultMessage": "Workspace'e kopyala"
+  },
+  "workspaceSettings.strategyLabel": {
+    "defaultMessage": "Varsayılan harici dosyalar"
+  },
+  "workspaceSettings.strategyReference": {
+    "defaultMessage": "Salt okunur referans"
+  },
+  "workspaceSettings.strategySymlink": {
+    "defaultMessage": "Workspace'e symlink"
+  },
+  "workspaceSettings.title": {
+    "defaultMessage": "Oturum workspace'i"
   }
 }

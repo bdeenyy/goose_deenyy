@@ -974,8 +974,23 @@
   "dirSwitcher.openInFinder": {
     "defaultMessage": "在文件管理器中打开"
   },
+  "dirSwitcher.openWorkspaceFolder": {
+    "defaultMessage": "打开工作区文件夹"
+  },
+  "dirSwitcher.originalFiles": {
+    "defaultMessage": "原始文件"
+  },
+  "dirSwitcher.projectBadge": {
+    "defaultMessage": "项目"
+  },
   "dirSwitcher.recentDirectories": {
     "defaultMessage": "最近的目录"
+  },
+  "dirSwitcher.sandboxBadge": {
+    "defaultMessage": "沙箱"
+  },
+  "dirSwitcher.worktreeBadge": {
+    "defaultMessage": "工作树"
   },
   "elicitationRequest.accept": {
     "defaultMessage": "接受"
@@ -1264,6 +1279,33 @@
   },
   "externalBackendSection.useExternalServerDescription": {
     "defaultMessage": "连接到运行在其他位置的 goose 服务器（需要重启应用）"
+  },
+  "externalFileStrategy.copy": {
+    "defaultMessage": "复制到工作区（推荐）"
+  },
+  "externalFileStrategy.copyDetail": {
+    "defaultMessage": "安全 — 不会修改原始文件。"
+  },
+  "externalFileStrategy.description": {
+    "defaultMessage": "这些文件位于会话工作区之外。请选择 goose 的访问方式。"
+  },
+  "externalFileStrategy.reference": {
+    "defaultMessage": "只读引用"
+  },
+  "externalFileStrategy.referenceDetail": {
+    "defaultMessage": "使用原始路径；goose 仅在工作区中写入。"
+  },
+  "externalFileStrategy.remember": {
+    "defaultMessage": "记住我的选择"
+  },
+  "externalFileStrategy.symlink": {
+    "defaultMessage": "链接到工作区"
+  },
+  "externalFileStrategy.symlinkDetail": {
+    "defaultMessage": "节省空间；更改可能影响原始文件。"
+  },
+  "externalFileStrategy.title": {
+    "defaultMessage": "如何处理附加文件？"
   },
   "freeOptionCards.chooseOption": {
     "defaultMessage": "选择一个选项以开始。"
@@ -4828,5 +4870,41 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "用编辑过的消息创建新会话"
+  },
+  "workspaceSettings.description": {
+    "defaultMessage": "控制 goose 如何将每个会话与你的文件和项目隔离。"
+  },
+  "workspaceSettings.profileAuto": {
+    "defaultMessage": "自动（git 仓库使用 worktree，否则使用沙箱）"
+  },
+  "workspaceSettings.profileDirect": {
+    "defaultMessage": "直接模式（不隔离）"
+  },
+  "workspaceSettings.profileLabel": {
+    "defaultMessage": "隔离模式"
+  },
+  "workspaceSettings.profileSandbox": {
+    "defaultMessage": "始终使用沙箱"
+  },
+  "workspaceSettings.profileWorktree": {
+    "defaultMessage": "优先使用 git worktree"
+  },
+  "workspaceSettings.rememberLabel": {
+    "defaultMessage": "记住外部文件选择"
+  },
+  "workspaceSettings.strategyCopy": {
+    "defaultMessage": "复制到工作区"
+  },
+  "workspaceSettings.strategyLabel": {
+    "defaultMessage": "外部文件默认策略"
+  },
+  "workspaceSettings.strategyReference": {
+    "defaultMessage": "只读引用"
+  },
+  "workspaceSettings.strategySymlink": {
+    "defaultMessage": "符号链接到工作区"
+  },
+  "workspaceSettings.title": {
+    "defaultMessage": "会话工作区"
   }
 }

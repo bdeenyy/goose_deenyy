@@ -974,8 +974,23 @@
   "dirSwitcher.openInFinder": {
     "defaultMessage": "Открыть в файловом менеджере"
   },
+  "dirSwitcher.openWorkspaceFolder": {
+    "defaultMessage": "Открыть папку workspace"
+  },
+  "dirSwitcher.originalFiles": {
+    "defaultMessage": "Исходные файлы"
+  },
+  "dirSwitcher.projectBadge": {
+    "defaultMessage": "Проект"
+  },
   "dirSwitcher.recentDirectories": {
     "defaultMessage": "Недавние каталоги"
+  },
+  "dirSwitcher.sandboxBadge": {
+    "defaultMessage": "Sandbox"
+  },
+  "dirSwitcher.worktreeBadge": {
+    "defaultMessage": "Worktree"
   },
   "elicitationRequest.accept": {
     "defaultMessage": "Принять"
@@ -1264,6 +1279,33 @@
   },
   "externalBackendSection.useExternalServerDescription": {
     "defaultMessage": "Подключиться к серверу goose, запущенному в другом месте (требуется перезапуск приложения)"
+  },
+  "externalFileStrategy.copy": {
+    "defaultMessage": "Копировать в workspace (рекомендуется)"
+  },
+  "externalFileStrategy.copyDetail": {
+    "defaultMessage": "Безопасно — оригиналы не затрагиваются."
+  },
+  "externalFileStrategy.description": {
+    "defaultMessage": "Эти файлы находятся вне workspace сессии. Выберите, как goose должен с ними работать."
+  },
+  "externalFileStrategy.reference": {
+    "defaultMessage": "Только чтение"
+  },
+  "externalFileStrategy.referenceDetail": {
+    "defaultMessage": "Использовать исходные пути; goose пишет только в workspace."
+  },
+  "externalFileStrategy.remember": {
+    "defaultMessage": "Запомнить мой выбор"
+  },
+  "externalFileStrategy.symlink": {
+    "defaultMessage": "Ссылка в workspace"
+  },
+  "externalFileStrategy.symlinkDetail": {
+    "defaultMessage": "Экономит место; изменения могут затронуть оригиналы."
+  },
+  "externalFileStrategy.title": {
+    "defaultMessage": "Как обрабатывать прикреплённые файлы?"
   },
   "freeOptionCards.chooseOption": {
     "defaultMessage": "Выберите вариант, чтобы начать."
@@ -4828,5 +4870,41 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Создать новый сеанс с измененным сообщением"
+  },
+  "workspaceSettings.description": {
+    "defaultMessage": "Управляйте тем, как goose изолирует каждую сессию от ваших файлов и проектов."
+  },
+  "workspaceSettings.profileAuto": {
+    "defaultMessage": "Авто (worktree в git-репозиториях, иначе sandbox)"
+  },
+  "workspaceSettings.profileDirect": {
+    "defaultMessage": "Прямой (без изоляции)"
+  },
+  "workspaceSettings.profileLabel": {
+    "defaultMessage": "Режим изоляции"
+  },
+  "workspaceSettings.profileSandbox": {
+    "defaultMessage": "Всегда sandbox"
+  },
+  "workspaceSettings.profileWorktree": {
+    "defaultMessage": "Предпочитать git worktree"
+  },
+  "workspaceSettings.rememberLabel": {
+    "defaultMessage": "Запомнить выбор для внешних файлов"
+  },
+  "workspaceSettings.strategyCopy": {
+    "defaultMessage": "Копировать в workspace"
+  },
+  "workspaceSettings.strategyLabel": {
+    "defaultMessage": "Внешние файлы по умолчанию"
+  },
+  "workspaceSettings.strategyReference": {
+    "defaultMessage": "Только чтение"
+  },
+  "workspaceSettings.strategySymlink": {
+    "defaultMessage": "Симлинк в workspace"
+  },
+  "workspaceSettings.title": {
+    "defaultMessage": "Workspace сессии"
   }
 }
