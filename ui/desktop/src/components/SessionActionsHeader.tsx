@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, FileJson, LoaderCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileJson, LoaderCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { defineMessages, useIntl } from '../i18n';
 import { acpExportSession } from '../acp/sessions';
@@ -51,6 +51,18 @@ const i18n = defineMessages({
     id: 'sessionActionsHeader.copiedText',
     defaultMessage: 'Text copied',
   },
+  toggleArtifactsOpen: {
+    id: 'sessionArtifacts.toggleOpen',
+    defaultMessage: 'Show artifacts panel',
+  },
+  toggleArtifactsClose: {
+    id: 'sessionArtifacts.toggleClose',
+    defaultMessage: 'Hide artifacts panel',
+  },
+  fileCount: {
+    id: 'sessionArtifacts.fileCount',
+    defaultMessage: '{count, plural, one {# file} other {# files}}',
+  },
 });
 
 const LONG_STRING_THRESHOLD = 180;
@@ -60,6 +72,9 @@ const STRING_PREVIEW_END = 56;
 interface SessionActionsHeaderProps {
   session?: Session;
   className?: string;
+  artifactsOpen?: boolean;
+  artifactsFileCount?: number;
+  onArtifactsToggle?: () => void;
 }
 
 interface ParsedSessionJson {
@@ -253,7 +268,13 @@ function JsonTree({
   );
 }
 
-export default function SessionActionsHeader({ session, className }: SessionActionsHeaderProps) {
+export default function SessionActionsHeader({
+  session,
+  className,
+  artifactsOpen = false,
+  artifactsFileCount = 0,
+  onArtifactsToggle,
+}: SessionActionsHeaderProps) {
   const intl = useIntl();
   const [isJsonOpen, setIsJsonOpen] = useState(false);
   const [jsonValue, setJsonValue] = useState<unknown>(null);
@@ -312,6 +333,33 @@ export default function SessionActionsHeader({ session, className }: SessionActi
 
   return (
     <>
+      {onArtifactsToggle && (
+        <div className="no-drag absolute top-[14px] right-28 z-[60]">
+          <button
+            type="button"
+            className="relative flex h-7 items-center gap-1 rounded-md px-2 text-text-secondary transition-colors hover:bg-background-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-border-active"
+            aria-label={intl.formatMessage(
+              artifactsOpen ? i18n.toggleArtifactsClose : i18n.toggleArtifactsOpen
+            )}
+            title={intl.formatMessage(
+              artifactsOpen ? i18n.toggleArtifactsClose : i18n.toggleArtifactsOpen
+            )}
+            onClick={onArtifactsToggle}
+          >
+            {artifactsOpen ? (
+              <PanelRightClose className="size-4" />
+            ) : (
+              <PanelRightOpen className="size-4" />
+            )}
+            {artifactsFileCount > 0 && (
+              <span className="rounded-full bg-background-accent px-1.5 py-0.5 text-[10px] font-medium text-text-primary">
+                {artifactsFileCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       <div
         className={cn(
           'no-drag absolute top-[14px] left-1/2 z-30 max-w-[min(36rem,calc(100vw-13rem))] -translate-x-1/2',

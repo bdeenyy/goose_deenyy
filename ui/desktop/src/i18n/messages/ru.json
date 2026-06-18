@@ -4906,5 +4906,95 @@
   },
   "workspaceSettings.title": {
     "defaultMessage": "Workspace сессии"
+  },
+  "sessionArtifacts.title": {
+    "defaultMessage": "Артефакты"
+  },
+  "sessionArtifacts.toggleOpen": {
+    "defaultMessage": "Показать панель артефактов"
+  },
+  "sessionArtifacts.toggleClose": {
+    "defaultMessage": "Скрыть панель артефактов"
+  },
+  "sessionArtifacts.inputs": {
+    "defaultMessage": "Входные файлы"
+  },
+  "sessionArtifacts.workspace": {
+    "defaultMessage": "Workspace"
+  },
+  "sessionArtifacts.meta": {
+    "defaultMessage": "Мета"
+  },
+  "sessionArtifacts.refresh": {
+    "defaultMessage": "Обновить"
+  },
+  "sessionArtifacts.empty": {
+    "defaultMessage": "Файлов пока нет"
+  },
+  "sessionArtifacts.openInFinder": {
+    "defaultMessage": "Открыть в файловом менеджере"
+  },
+  "sessionArtifacts.copyPath": {
+    "defaultMessage": "Копировать путь"
+  },
+  "sessionArtifacts.copiedPath": {
+    "defaultMessage": "Путь скопирован"
+  },
+  "sessionArtifacts.externalBadge": {
+    "defaultMessage": "Внешний"
+  },
+  "sessionArtifacts.fileCount": {
+    "defaultMessage": "{count, plural, one {# файл} few {# файла} many {# файлов} other {# файла}}"
+  },
+  "sessionArtifacts.truncated": {
+    "defaultMessage": "Показаны первые {count} файлов"
+  },
+  "sessionArtifacts.profileSandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "sessionArtifacts.profileWorktree": {
+    "defaultMessage": "Worktree"
+  },
+  "sessionArtifacts.profileDirect": {
+    "defaultMessage": "Direct"
+  },
+  "sessionArtifacts.workingDir": {
+    "defaultMessage": "Рабочая директория"
+  },
+  "sessionArtifacts.rootPath": {
+    "defaultMessage": "Корень workspace"
+  },
+  "sessionArtifacts.branchName": {
+    "defaultMessage": "Ветка"
+  },
+  "sessionArtifacts.repoRoot": {
+    "defaultMessage": "Репозиторий"
+  },
+  "hub.workspaceProfile.auto": {
+    "defaultMessage": "Auto"
+  },
+  "hub.workspaceProfile.sandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "hub.workspaceProfile.worktree": {
+    "defaultMessage": "Worktree"
+  },
+  "hub.workspaceProfile.direct": {
+    "defaultMessage": "Direct"
+  },
+  "hub.workspaceProfile.autoTooltip": {
+    "defaultMessage": "Auto (worktree в git-репозиториях, иначе sandbox). По умолчанию из настроек."
+  },
+  "hub.workspaceProfile.sandboxTooltip": {
+    "defaultMessage": "Всегда sandbox. По умолчанию из настроек."
+  },
+  "hub.workspaceProfile.worktreeTooltip": {
+    "defaultMessage": "Предпочитать git worktree. По умолчанию из настроек."
+  },
+  "hub.workspaceProfile.directTooltip": {
+    "defaultMessage": "Direct (без изоляции). По умолчанию из настроек."
+  },
+  "hub.workspaceProfile.recommended": {
+    "defaultMessage": "Рекомендуется"
   }
 }

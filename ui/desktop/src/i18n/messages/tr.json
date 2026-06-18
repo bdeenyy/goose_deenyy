@@ -4906,5 +4906,95 @@
   },
   "workspaceSettings.title": {
     "defaultMessage": "Oturum workspace'i"
+  },
+  "sessionArtifacts.title": {
+    "defaultMessage": "Artefaktlar"
+  },
+  "sessionArtifacts.toggleOpen": {
+    "defaultMessage": "Artefakt panelini göster"
+  },
+  "sessionArtifacts.toggleClose": {
+    "defaultMessage": "Artefakt panelini gizle"
+  },
+  "sessionArtifacts.inputs": {
+    "defaultMessage": "Girdiler"
+  },
+  "sessionArtifacts.workspace": {
+    "defaultMessage": "Workspace"
+  },
+  "sessionArtifacts.meta": {
+    "defaultMessage": "Meta"
+  },
+  "sessionArtifacts.refresh": {
+    "defaultMessage": "Yenile"
+  },
+  "sessionArtifacts.empty": {
+    "defaultMessage": "Henüz dosya yok"
+  },
+  "sessionArtifacts.openInFinder": {
+    "defaultMessage": "Dosya yöneticisinde aç"
+  },
+  "sessionArtifacts.copyPath": {
+    "defaultMessage": "Yolu kopyala"
+  },
+  "sessionArtifacts.copiedPath": {
+    "defaultMessage": "Yol kopyalandı"
+  },
+  "sessionArtifacts.externalBadge": {
+    "defaultMessage": "Harici"
+  },
+  "sessionArtifacts.fileCount": {
+    "defaultMessage": "{count, plural, one {# dosya} other {# dosya}}"
+  },
+  "sessionArtifacts.truncated": {
+    "defaultMessage": "İlk {count} dosya gösteriliyor"
+  },
+  "sessionArtifacts.profileSandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "sessionArtifacts.profileWorktree": {
+    "defaultMessage": "Worktree"
+  },
+  "sessionArtifacts.profileDirect": {
+    "defaultMessage": "Direct"
+  },
+  "sessionArtifacts.workingDir": {
+    "defaultMessage": "Çalışma dizini"
+  },
+  "sessionArtifacts.rootPath": {
+    "defaultMessage": "Workspace kökü"
+  },
+  "sessionArtifacts.branchName": {
+    "defaultMessage": "Dal"
+  },
+  "sessionArtifacts.repoRoot": {
+    "defaultMessage": "Depo"
+  },
+  "hub.workspaceProfile.auto": {
+    "defaultMessage": "Auto"
+  },
+  "hub.workspaceProfile.sandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "hub.workspaceProfile.worktree": {
+    "defaultMessage": "Worktree"
+  },
+  "hub.workspaceProfile.direct": {
+    "defaultMessage": "Direct"
+  },
+  "hub.workspaceProfile.autoTooltip": {
+    "defaultMessage": "Auto (git repolarında worktree, aksi halde sandbox). Ayarlardan varsayılan."
+  },
+  "hub.workspaceProfile.sandboxTooltip": {
+    "defaultMessage": "Her zaman sandbox. Ayarlardan varsayılan."
+  },
+  "hub.workspaceProfile.worktreeTooltip": {
+    "defaultMessage": "Git worktree tercih et. Ayarlardan varsayılan."
+  },
+  "hub.workspaceProfile.directTooltip": {
+    "defaultMessage": "Direct (izolasyon yok). Ayarlardan varsayılan."
+  },
+  "hub.workspaceProfile.recommended": {
+    "defaultMessage": "Önerilen"
   }
 }

@@ -34,6 +34,8 @@ import { useAutoSubmit } from '../hooks/useAutoSubmit';
 import { Goose } from './icons';
 import EnvironmentBadge from './GooseSidebar/EnvironmentBadge';
 import SessionActionsHeader from './SessionActionsHeader';
+import SessionArtifactsPanel from './session/SessionArtifactsPanel';
+import { useArtifactsPanel } from '../hooks/useArtifactsPanel';
 
 const i18n = defineMessages({
   failedToLoadSession: {
@@ -119,6 +121,16 @@ export default function BaseChat({
     sessionId,
     onStreamFinish,
   });
+
+  const {
+    isOpen: isArtifactsOpen,
+    setIsOpen: setArtifactsOpen,
+    toggle: toggleArtifacts,
+    artifacts,
+    isLoading: isArtifactsLoading,
+    refresh: refreshArtifacts,
+    fileCount: artifactsFileCount,
+  } = useArtifactsPanel(sessionId, session?.working_dir);
 
   const recipe = session?.recipe;
 
@@ -417,127 +429,170 @@ export default function BaseChat({
         {renderHeader && renderHeader()}
 
         {/* Chat container with sticky recipe header */}
-        <div className="flex flex-col flex-1 min-h-0 relative">
-          {/* Goose watermark - top right */}
-          <div className="absolute top-[14px] right-4 z-[60] flex flex-row items-center gap-1">
-            <a
-              href="https://goose-docs.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="no-drag flex flex-row items-center gap-1 hover:opacity-80 transition-opacity"
+        <div className="flex flex-row flex-1 min-h-0">
+          <div className="flex min-w-0 flex-1 flex-col min-h-0">
+            <div className="flex flex-col flex-1 min-h-0 relative">
+              {/* Goose watermark - top right */}
+              <div className="absolute top-[14px] right-4 z-[60] flex flex-row items-center gap-1">
+                <a
+                  href="https://goose-docs.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="no-drag flex flex-row items-center gap-1 hover:opacity-80 transition-opacity"
+                >
+                  <Goose className="size-5 goose-icon-animation" />
+                  <span className="text-sm leading-none text-text-secondary -translate-y-px">
+                    goose
+                  </span>
+                </a>
+                <EnvironmentBadge className="translate-y-px" />
+              </div>
+
+              <SessionActionsHeader
+                session={session}
+                artifactsOpen={isArtifactsOpen}
+                artifactsFileCount={artifactsFileCount}
+                onArtifactsToggle={toggleArtifacts}
+              />
+
+              <ScrollArea
+                ref={scrollRef}
+                className={`flex-1 min-h-0 relative ${contentClassName}`}
+                autoScroll
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                data-drop-zone="true"
+                paddingX={6}
+                paddingY={0}
+              >
+                {recipe?.title && (
+                  <div className="sticky top-0 z-10 bg-background-primary px-0 -mx-6 mb-6 pt-6">
+                    <RecipeHeader title={recipe.title} />
+                  </div>
+                )}
+
+                {recipe && (
+                  <div className={hasStartedUsingRecipe ? 'mb-6' : ''}>
+                    <RecipeActivities
+                      append={(text: string) => handleSubmit({ msg: text, images: [] })}
+                      activities={Array.isArray(recipe.activities) ? recipe.activities : null}
+                      title={recipe.title}
+                      parameterValues={session?.user_recipe_values || {}}
+                    />
+                  </div>
+                )}
+
+                {messages.length > 0 || recipe ? (
+                  <>
+                    <SearchView>
+                      <ProgressiveMessageList
+                        messages={messages}
+                        chat={{ sessionId }}
+                        toolCallNotifications={toolCallNotifications}
+                        append={(text: string) => handleSubmit({ msg: text, images: [] })}
+                        isUserMessage={(m: Message) => m.role === 'user'}
+                        isStreamingMessage={chatState !== ChatState.Idle}
+                        onRenderingComplete={handleRenderingComplete}
+                        onMessageUpdate={onMessageUpdate}
+                        submitElicitationResponse={submitElicitationResponse}
+                      />
+                    </SearchView>
+
+                    <div className="block h-8" />
+                  </>
+                ) : null}
+              </ScrollArea>
+
+              {chatState !== ChatState.Idle && (
+                <div className="absolute bottom-1 left-4 z-20 pointer-events-none">
+                  <LoadingGoose
+                    chatState={chatState}
+                    message={
+                      messages.length > 0
+                        ? getThinkingMessage(messages[messages.length - 1])
+                        : undefined
+                    }
+                  />
+                </div>
+              )}
+            </div>
+
+            <ChatInputCard
+              className={cn(
+                'relative z-10 mx-4 mb-4',
+                !disableAnimation && 'animate-[fadein_400ms_ease-in_forwards]'
+              )}
             >
-              <Goose className="size-5 goose-icon-animation" />
-              <span className="text-sm leading-none text-text-secondary -translate-y-px">
-                goose
-              </span>
-            </a>
-            <EnvironmentBadge className="translate-y-px" />
+              <ChatInput
+                inputRef={chatInputRef}
+                sessionId={sessionId}
+                handleSubmit={chatInputSubmit}
+                chatState={chatState}
+                setChatState={setChatState}
+                onStop={stopStreaming}
+                pauseQueueOnStop={pauseQueueOnStop}
+                commandHistory={commandHistory}
+                initialValue={initialPrompt}
+                setView={setView}
+                totalTokens={tokenState?.totalTokens ?? session?.total_tokens ?? undefined}
+                accumulatedInputTokens={
+                  tokenState?.accumulatedInputTokens ?? session?.accumulated_input_tokens ?? undefined
+                }
+                accumulatedOutputTokens={
+                  tokenState?.accumulatedOutputTokens ??
+                  session?.accumulated_output_tokens ??
+                  undefined
+                }
+                accumulatedCost={
+                  tokenState?.accumulatedCost ?? session?.accumulated_cost ?? undefined
+                }
+                droppedFiles={droppedFiles}
+                onFilesProcessed={() => setDroppedFiles([])}
+                messages={messages}
+                disableAnimation={disableAnimation}
+                recipe={recipe}
+                recipeAccepted={!hasNotAcceptedRecipe}
+                initialPrompt={initialPrompt}
+                toolCount={toolCount || 0}
+                sessionModel={sessionModel}
+                sessionProvider={sessionProvider}
+                sessionLoaded={sessionLoaded}
+                latestInference={latestInference}
+                {...customChatInputProps}
+              />
+            </ChatInputCard>
           </div>
 
-          <SessionActionsHeader session={session} />
-
-          <ScrollArea
-            ref={scrollRef}
-            className={`flex-1 min-h-0 relative ${contentClassName}`}
-            autoScroll
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            data-drop-zone="true"
-            paddingX={6}
-            paddingY={0}
-          >
-            {recipe?.title && (
-              <div className="sticky top-0 z-10 bg-background-primary px-0 -mx-6 mb-6 pt-6">
-                <RecipeHeader title={recipe.title} />
-              </div>
-            )}
-
-            {recipe && (
-              <div className={hasStartedUsingRecipe ? 'mb-6' : ''}>
-                <RecipeActivities
-                  append={(text: string) => handleSubmit({ msg: text, images: [] })}
-                  activities={Array.isArray(recipe.activities) ? recipe.activities : null}
-                  title={recipe.title}
-                  parameterValues={session?.user_recipe_values || {}}
-                />
-              </div>
-            )}
-
-            {messages.length > 0 || recipe ? (
-              <>
-                <SearchView>
-                  <ProgressiveMessageList
-                    messages={messages}
-                    chat={{ sessionId }}
-                    toolCallNotifications={toolCallNotifications}
-                    append={(text: string) => handleSubmit({ msg: text, images: [] })}
-                    isUserMessage={(m: Message) => m.role === 'user'}
-                    isStreamingMessage={chatState !== ChatState.Idle}
-                    onRenderingComplete={handleRenderingComplete}
-                    onMessageUpdate={onMessageUpdate}
-                    submitElicitationResponse={submitElicitationResponse}
-                  />
-                </SearchView>
-
-                <div className="block h-8" />
-              </>
-            ) : null}
-          </ScrollArea>
-
-          {chatState !== ChatState.Idle && (
-            <div className="absolute bottom-1 left-4 z-20 pointer-events-none">
-              <LoadingGoose
-                chatState={chatState}
-                message={
-                  messages.length > 0
-                    ? getThinkingMessage(messages[messages.length - 1])
-                    : undefined
-                }
+          {isArtifactsOpen && !isMobile && (
+            <div className="shrink-0 transition-[width] duration-200 ease-in-out">
+              <SessionArtifactsPanel
+                artifacts={artifacts}
+                isLoading={isArtifactsLoading}
+                onRefresh={() => void refreshArtifacts()}
               />
             </div>
           )}
         </div>
 
-        <ChatInputCard
-          className={cn(
-            'relative z-10 mx-4 mb-4',
-            !disableAnimation && 'animate-[fadein_400ms_ease-in_forwards]'
-          )}
-        >
-          <ChatInput
-            inputRef={chatInputRef}
-            sessionId={sessionId}
-            handleSubmit={chatInputSubmit}
-            chatState={chatState}
-            setChatState={setChatState}
-            onStop={stopStreaming}
-            pauseQueueOnStop={pauseQueueOnStop}
-            commandHistory={commandHistory}
-            initialValue={initialPrompt}
-            setView={setView}
-            totalTokens={tokenState?.totalTokens ?? session?.total_tokens ?? undefined}
-            accumulatedInputTokens={
-              tokenState?.accumulatedInputTokens ?? session?.accumulated_input_tokens ?? undefined
-            }
-            accumulatedOutputTokens={
-              tokenState?.accumulatedOutputTokens ?? session?.accumulated_output_tokens ?? undefined
-            }
-            accumulatedCost={tokenState?.accumulatedCost ?? session?.accumulated_cost ?? undefined}
-            droppedFiles={droppedFiles}
-            onFilesProcessed={() => setDroppedFiles([])} // Clear dropped files after processing
-            messages={messages}
-            disableAnimation={disableAnimation}
-            recipe={recipe}
-            recipeAccepted={!hasNotAcceptedRecipe}
-            initialPrompt={initialPrompt}
-            toolCount={toolCount || 0}
-            sessionModel={sessionModel}
-            sessionProvider={sessionProvider}
-            sessionLoaded={sessionLoaded}
-            latestInference={latestInference}
-            {...customChatInputProps}
-          />
-        </ChatInputCard>
+        {isArtifactsOpen && isMobile && (
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-[70] bg-black/40"
+              aria-label="Close artifacts panel"
+              onClick={() => setArtifactsOpen(false)}
+            />
+            <div className="fixed inset-y-0 right-0 z-[80] w-[min(360px,90vw)] shadow-xl">
+              <SessionArtifactsPanel
+                artifacts={artifacts}
+                isLoading={isArtifactsLoading}
+                onRefresh={() => void refreshArtifacts()}
+                onClose={() => setArtifactsOpen(false)}
+                className="w-full"
+              />
+            </div>
+          </>
+        )}
       </MainPanelLayout>
 
       {recipe && isActiveSession && session?.session_type !== 'scheduled' && (

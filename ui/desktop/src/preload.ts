@@ -201,6 +201,10 @@ type ElectronAPI = {
   ) => Promise<import('./workspace/types').ResolveWorkspaceResult>;
   finalizeSessionWorkspace: (request: Record<string, unknown>) => Promise<void>;
   getWorkspaceInfo: (sessionId: string) => Promise<import('./workspace/types').WorkspaceInfo | null>;
+  listSessionArtifacts: (
+    sessionId: string,
+    workingDir?: string
+  ) => Promise<import('./workspace/artifactScanner').SessionArtifactsResult | null>;
   cleanupSessionWorkspace: (sessionId: string) => Promise<void>;
 };
 
@@ -253,6 +257,8 @@ const electronAPI: ElectronAPI = {
   finalizeSessionWorkspace: (request: Record<string, unknown>) =>
     ipcRenderer.invoke('finalize-session-workspace', request),
   getWorkspaceInfo: (sessionId: string) => ipcRenderer.invoke('get-workspace-info', sessionId),
+  listSessionArtifacts: (sessionId: string, workingDir?: string) =>
+    ipcRenderer.invoke('list-session-artifacts', { sessionId, workingDir }),
   cleanupSessionWorkspace: (sessionId: string) =>
     ipcRenderer.invoke('cleanup-session-workspace', sessionId),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),

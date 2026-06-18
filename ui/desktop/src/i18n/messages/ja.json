@@ -4906,5 +4906,95 @@
   },
   "workspaceSettings.title": {
     "defaultMessage": "セッションワークスペース"
+  },
+  "sessionArtifacts.title": {
+    "defaultMessage": "アーティファクト"
+  },
+  "sessionArtifacts.toggleOpen": {
+    "defaultMessage": "アーティファクトパネルを表示"
+  },
+  "sessionArtifacts.toggleClose": {
+    "defaultMessage": "アーティファクトパネルを非表示"
+  },
+  "sessionArtifacts.inputs": {
+    "defaultMessage": "入力"
+  },
+  "sessionArtifacts.workspace": {
+    "defaultMessage": "ワークスペース"
+  },
+  "sessionArtifacts.meta": {
+    "defaultMessage": "メタ"
+  },
+  "sessionArtifacts.refresh": {
+    "defaultMessage": "更新"
+  },
+  "sessionArtifacts.empty": {
+    "defaultMessage": "ファイルはまだありません"
+  },
+  "sessionArtifacts.openInFinder": {
+    "defaultMessage": "ファイルマネージャーで開く"
+  },
+  "sessionArtifacts.copyPath": {
+    "defaultMessage": "パスをコピー"
+  },
+  "sessionArtifacts.copiedPath": {
+    "defaultMessage": "パスをコピーしました"
+  },
+  "sessionArtifacts.externalBadge": {
+    "defaultMessage": "外部"
+  },
+  "sessionArtifacts.fileCount": {
+    "defaultMessage": "{count, plural, other {# 件のファイル}}"
+  },
+  "sessionArtifacts.truncated": {
+    "defaultMessage": "最初の {count} 件を表示"
+  },
+  "sessionArtifacts.profileSandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "sessionArtifacts.profileWorktree": {
+    "defaultMessage": "Worktree"
+  },
+  "sessionArtifacts.profileDirect": {
+    "defaultMessage": "Direct"
+  },
+  "sessionArtifacts.workingDir": {
+    "defaultMessage": "作業ディレクトリ"
+  },
+  "sessionArtifacts.rootPath": {
+    "defaultMessage": "ワークスペースルート"
+  },
+  "sessionArtifacts.branchName": {
+    "defaultMessage": "ブランチ"
+  },
+  "sessionArtifacts.repoRoot": {
+    "defaultMessage": "リポジトリ"
+  },
+  "hub.workspaceProfile.auto": {
+    "defaultMessage": "Auto"
+  },
+  "hub.workspaceProfile.sandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "hub.workspaceProfile.worktree": {
+    "defaultMessage": "Worktree"
+  },
+  "hub.workspaceProfile.direct": {
+    "defaultMessage": "Direct"
+  },
+  "hub.workspaceProfile.autoTooltip": {
+    "defaultMessage": "Auto（git リポジトリでは worktree、それ以外は sandbox）。設定のデフォルト。"
+  },
+  "hub.workspaceProfile.sandboxTooltip": {
+    "defaultMessage": "常に sandbox。設定のデフォルト。"
+  },
+  "hub.workspaceProfile.worktreeTooltip": {
+    "defaultMessage": "git worktree を優先。設定のデフォルト。"
+  },
+  "hub.workspaceProfile.directTooltip": {
+    "defaultMessage": "Direct（隔離なし）。設定のデフォルト。"
+  },
+  "hub.workspaceProfile.recommended": {
+    "defaultMessage": "おすすめ"
   }
 }

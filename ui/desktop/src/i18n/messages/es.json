@@ -4906,5 +4906,95 @@
   },
   "workspaceSettings.title": {
     "defaultMessage": "Workspace de sesión"
+  },
+  "sessionArtifacts.title": {
+    "defaultMessage": "Artefactos"
+  },
+  "sessionArtifacts.toggleOpen": {
+    "defaultMessage": "Mostrar panel de artefactos"
+  },
+  "sessionArtifacts.toggleClose": {
+    "defaultMessage": "Ocultar panel de artefactos"
+  },
+  "sessionArtifacts.inputs": {
+    "defaultMessage": "Entradas"
+  },
+  "sessionArtifacts.workspace": {
+    "defaultMessage": "Workspace"
+  },
+  "sessionArtifacts.meta": {
+    "defaultMessage": "Meta"
+  },
+  "sessionArtifacts.refresh": {
+    "defaultMessage": "Actualizar"
+  },
+  "sessionArtifacts.empty": {
+    "defaultMessage": "Aún no hay archivos"
+  },
+  "sessionArtifacts.openInFinder": {
+    "defaultMessage": "Abrir en el administrador de archivos"
+  },
+  "sessionArtifacts.copyPath": {
+    "defaultMessage": "Copiar ruta"
+  },
+  "sessionArtifacts.copiedPath": {
+    "defaultMessage": "Ruta copiada"
+  },
+  "sessionArtifacts.externalBadge": {
+    "defaultMessage": "Externo"
+  },
+  "sessionArtifacts.fileCount": {
+    "defaultMessage": "{count, plural, one {# archivo} other {# archivos}}"
+  },
+  "sessionArtifacts.truncated": {
+    "defaultMessage": "Mostrando los primeros {count} archivos"
+  },
+  "sessionArtifacts.profileSandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "sessionArtifacts.profileWorktree": {
+    "defaultMessage": "Worktree"
+  },
+  "sessionArtifacts.profileDirect": {
+    "defaultMessage": "Direct"
+  },
+  "sessionArtifacts.workingDir": {
+    "defaultMessage": "Directorio de trabajo"
+  },
+  "sessionArtifacts.rootPath": {
+    "defaultMessage": "Raíz del workspace"
+  },
+  "sessionArtifacts.branchName": {
+    "defaultMessage": "Rama"
+  },
+  "sessionArtifacts.repoRoot": {
+    "defaultMessage": "Repositorio"
+  },
+  "hub.workspaceProfile.auto": {
+    "defaultMessage": "Auto"
+  },
+  "hub.workspaceProfile.sandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "hub.workspaceProfile.worktree": {
+    "defaultMessage": "Worktree"
+  },
+  "hub.workspaceProfile.direct": {
+    "defaultMessage": "Direct"
+  },
+  "hub.workspaceProfile.autoTooltip": {
+    "defaultMessage": "Auto (worktree en repos git, si no sandbox). Predeterminado de Ajustes."
+  },
+  "hub.workspaceProfile.sandboxTooltip": {
+    "defaultMessage": "Siempre sandbox. Predeterminado de Ajustes."
+  },
+  "hub.workspaceProfile.worktreeTooltip": {
+    "defaultMessage": "Preferir git worktree. Predeterminado de Ajustes."
+  },
+  "hub.workspaceProfile.directTooltip": {
+    "defaultMessage": "Direct (sin aislamiento). Predeterminado de Ajustes."
+  },
+  "hub.workspaceProfile.recommended": {
+    "defaultMessage": "Recomendado"
   }
 }

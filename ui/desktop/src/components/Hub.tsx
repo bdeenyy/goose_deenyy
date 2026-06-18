@@ -26,6 +26,8 @@ import { createSessionWithWorkspace } from '../sessions';
 import LoadingGoose from './LoadingGoose';
 import { UserInput } from '../types/message';
 import { ExternalFileStrategyPrompt, useExternalFileStrategyPrompt } from './workspace/ExternalFileStrategyPrompt';
+import { WorkspaceProfilePicker } from './workspace/WorkspaceProfilePicker';
+import type { WorkspaceProfile } from '../workspace/types';
 import type { DroppedFile } from '../hooks/useFileDrop';
 
 const i18n = defineMessages({
@@ -71,6 +73,7 @@ export default function Hub({
   const [directoryExplicitlyChosen, setDirectoryExplicitlyChosen] = useState(Boolean(requestDir));
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [pendingDroppedFiles, setPendingDroppedFiles] = useState<DroppedFile[]>([]);
+  const [sessionWorkspaceProfile, setSessionWorkspaceProfile] = useState<WorkspaceProfile>('auto');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { time, meridiem, hour } = useClock();
   const { open: strategyPromptOpen, prompt: promptStrategy, handleChoose, handleCancel } =
@@ -83,10 +86,9 @@ export default function Hub({
   }, [intl, hour]);
 
   useEffect(() => {
-    const frameId = requestAnimationFrame(() => {
-      inputRef.current?.focus();
+    void window.electron.getSetting('workspaceProfile').then((profile) => {
+      setSessionWorkspaceProfile(profile);
     });
-    return () => cancelAnimationFrame(frameId);
   }, []);
 
   useEffect(() => {
@@ -102,9 +104,24 @@ export default function Hub({
     };
   }, []);
 
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  const recommendedProfile = useMemo((): WorkspaceProfile | null => {
+    if (directoryExplicitlyChosen || pendingDroppedFiles.length === 0) {
+      return null;
+    }
+    return 'auto';
+  }, [directoryExplicitlyChosen, pendingDroppedFiles.length]);
+
   const handleWorkingDirChange = (newDir: string) => {
     setWorkingDir(newDir);
     setDirectoryExplicitlyChosen(true);
+    setSessionWorkspaceProfile('direct');
   };
 
   const handleSubmit = async (input: UserInput) => {
@@ -119,6 +136,7 @@ export default function Hub({
       const { session, userInput } = await createSessionWithWorkspace({
         workingDir,
         directoryExplicitlyChosen,
+        workspaceProfile: sessionWorkspaceProfile,
         userInput: input,
         extensionConfigs,
         allExtensions: extensionConfigs.length > 0 ? undefined : extensionsList,
@@ -164,7 +182,16 @@ export default function Hub({
           </span>
           <span className="text-2xl font-light text-text-secondary">{meridiem}</span>
         </div>
-        <p className="text-xl text-text-secondary mb-6">{greeting}</p>
+        <p className="text-xl text-text-secondary mb-4">{greeting}</p>
+
+        <div className="mb-3 flex justify-center">
+          <WorkspaceProfilePicker
+            value={sessionWorkspaceProfile}
+            onChange={setSessionWorkspaceProfile}
+            disabled={isCreatingSession}
+            recommended={recommendedProfile}
+          />
+        </div>
 
         <ChatInputCard>
           <ChatInput

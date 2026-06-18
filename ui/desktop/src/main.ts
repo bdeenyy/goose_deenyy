@@ -53,6 +53,7 @@ import * as mesh from './mesh';
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { BLOCKED_PROTOCOLS, WEB_PROTOCOLS } from './utils/urlSecurity';
 import { buildCSP } from './utils/csp';
+import { listSessionArtifacts } from './workspace/artifactScanner';
 import {
   cleanupOrphanedWorkspaces,
   cleanupWorkspace,
@@ -1747,6 +1748,17 @@ ipcMain.handle('get-workspace-info', async (_event, sessionId: string) => {
   return getWorkspaceInfo(sessionId, appConfig.GOOSE_PATH_ROOT as string | undefined);
 });
 
+ipcMain.handle(
+  'list-session-artifacts',
+  async (_event, { sessionId, workingDir }: { sessionId: string; workingDir?: string }) => {
+    return listSessionArtifacts(
+      sessionId,
+      workingDir,
+      appConfig.GOOSE_PATH_ROOT as string | undefined
+    );
+  }
+);
+
 ipcMain.handle('cleanup-session-workspace', async (_event, sessionId: string) => {
   await cleanupWorkspace(sessionId, appConfig.GOOSE_PATH_ROOT as string | undefined);
 });
@@ -2815,9 +2827,13 @@ async function appMain() {
     event.returnValue = getConfiguredGooseLocale();
   });
 
-  ipcMain.handle('open-directory-in-explorer', async (_event, path: string) => {
+  ipcMain.handle('open-directory-in-explorer', async (_event, targetPath: string) => {
     try {
-      return !!(await shell.openPath(path));
+      if (fsSync.existsSync(targetPath) && fsSync.statSync(targetPath).isFile()) {
+        shell.showItemInFolder(targetPath);
+        return true;
+      }
+      return !!(await shell.openPath(targetPath));
     } catch (error) {
       console.error('Error opening directory in explorer:', error);
       return false;
