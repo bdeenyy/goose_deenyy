@@ -61,6 +61,7 @@ import {
   getWorkspaceInfo,
   hasExternalWorkspaceFiles,
   resolveWorkspace,
+  stageSessionFiles,
 } from './workspace/workspaceManager';
 
 function shouldSetupUpdater(): boolean {
@@ -1744,6 +1745,16 @@ ipcMain.handle('resolve-session-workspace', async (_event, request) => {
 ipcMain.handle('finalize-session-workspace', async (_event, request) => {
   await finalizeWorkspace({
     ...request,
+    goosePathRoot: appConfig.GOOSE_PATH_ROOT as string | undefined,
+  });
+});
+
+ipcMain.handle('stage-session-files', async (_event, request) => {
+  const settings = getSettings();
+  return stageSessionFiles({
+    ...request,
+    externalFileStrategy:
+      request.externalFileStrategy ?? settings.externalFileStrategy ?? 'copy',
     goosePathRoot: appConfig.GOOSE_PATH_ROOT as string | undefined,
   });
 });

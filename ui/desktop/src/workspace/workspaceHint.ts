@@ -1,4 +1,4 @@
-import type { WorkspaceManifest } from './types';
+import type { StagedFile, WorkspaceManifest } from './types';
 
 export function buildWorkspaceHint(manifest: WorkspaceManifest): string {
   if (manifest.profile === 'direct') {
@@ -29,6 +29,16 @@ export function buildWorkspaceHint(manifest: WorkspaceManifest): string {
   }
 
   return lines.join('\n');
+}
+
+export function pathMappingFromStagedFiles(stagedFiles: StagedFile[]): Record<string, string> {
+  const mapping: Record<string, string> = {};
+  for (const file of stagedFiles) {
+    if (file.original !== file.staged) {
+      mapping[file.original] = file.staged;
+    }
+  }
+  return mapping;
 }
 
 export function applyPathMapping(message: string, mapping: Record<string, string>): string {

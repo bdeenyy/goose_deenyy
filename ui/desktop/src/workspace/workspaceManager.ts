@@ -14,6 +14,8 @@ import type {
   ResolveWorkspaceResult,
   ResolvedWorkspaceProfile,
   StagedFile,
+  StageSessionFilesRequest,
+  StageSessionFilesResult,
   WorkspaceInfo,
   WorkspaceManifest,
   WorkspaceProfile,
@@ -129,6 +131,78 @@ async function uniqueInputPath(inputsDir: string, filePath: string): Promise<str
     }
   }
   return path.join(inputsDir, `${stem}-${Date.now()}${ext}`);
+}
+
+function replaceSessionIdInPath(pathStr: string, pendingId: string, sessionId: string): string {
+  if (!pathStr.includes(pendingId)) {
+    return pathStr;
+  }
+  return pathStr.split(pendingId).join(sessionId);
+}
+
+async function removePhysicalWorkspace(
+  manifest: WorkspaceManifest,
+  indexSessionId: string,
+  goosePathRoot?: string
+): Promise<void> {
+  if (manifest.profile === 'worktree' && manifest.repoRoot && manifest.branchName) {
+    try {
+      await execFileAsync(
+        'git',
+        ['-C', manifest.repoRoot, 'worktree', 'remove', '--force', manifest.workingDir],
+        { timeout: 30_000 }
+      );
+    } catch {
+      // ignore
+    }
+    try {
+      await execFileAsync(
+        'git',
+        ['-C', manifest.repoRoot, 'branch', '-D', manifest.branchName],
+        { timeout: 10_000 }
+      );
+    } catch {
+      // ignore
+    }
+  }
+
+  const indexPath = workspaceRootForId(indexSessionId, goosePathRoot);
+  const resolvedIndexPath = path.resolve(indexPath);
+  const resolvedSessionRoot = path.resolve(manifest.rootPath);
+
+  if (
+    manifest.profile !== 'direct' &&
+    resolvedSessionRoot !== resolvedIndexPath &&
+    fsSync.existsSync(manifest.rootPath)
+  ) {
+    await fs.rm(manifest.rootPath, { recursive: true, force: true });
+  }
+}
+
+export async function stageSessionFiles(
+  request: StageSessionFilesRequest
+): Promise<StageSessionFilesResult> {
+  const manifest = await readManifestForSession(request.sessionId, request.goosePathRoot);
+  if (!manifest || manifest.profile === 'direct') {
+    return { pathMapping: {} };
+  }
+
+  const { stagedFiles, pathMapping } = await stageExternalFiles(
+    manifest.rootPath,
+    manifest.workingDir,
+    request.filePaths,
+    request.externalFileStrategy
+  );
+
+  if (stagedFiles.length === 0) {
+    return { pathMapping: {} };
+  }
+
+  manifest.stagedFiles = [...manifest.stagedFiles, ...stagedFiles];
+  const indexPath = workspaceRootForId(request.sessionId, request.goosePathRoot);
+  await writeManifest(indexPath, manifest);
+
+  return { pathMapping };
 }
 
 async function stageExternalFiles(
@@ -256,10 +330,10 @@ export async function resolveWorkspace(
   const externalFilePaths = [...new Set((request.externalFilePaths ?? []).filter(Boolean))];
 
   let gitRepoRoot: string | null = null;
-  if (externalFilePaths.length > 0) {
-    gitRepoRoot = await findGitRepoRoot(externalFilePaths[0]);
-  } else if (request.explicitWorkingDir) {
+  if (request.explicitWorkingDir) {
     gitRepoRoot = await findGitRepoRoot(request.explicitWorkingDir);
+  } else if (externalFilePaths.length > 0) {
+    gitRepoRoot = await findGitRepoRoot(externalFilePaths[0]);
   }
 
   const resolvedProfile = resolveProfile(request.profile, gitRepoRoot !== null);
@@ -397,6 +471,11 @@ export async function finalizeWorkspace(request: FinalizeWorkspaceRequest): Prom
     }
   }
 
+  manifest.stagedFiles = manifest.stagedFiles.map((file) => ({
+    ...file,
+    staged: replaceSessionIdInPath(file.staged, pendingWorkspaceId, sessionId),
+  }));
+
   manifest.sessionId = sessionId;
   const manifestWritePath = fsSync.existsSync(finalIndexPath) ? finalIndexPath : pendingIndexPath;
   await fs.writeFile(
@@ -415,39 +494,9 @@ export async function cleanupWorkspace(
     return;
   }
 
-  if (manifest.profile === 'worktree' && manifest.repoRoot && manifest.branchName) {
-    try {
-      await execFileAsync(
-        'git',
-        ['-C', manifest.repoRoot, 'worktree', 'remove', '--force', manifest.workingDir],
-        { timeout: 30_000 }
-      );
-    } catch {
-      // ignore
-    }
-    try {
-      await execFileAsync(
-        'git',
-        ['-C', manifest.repoRoot, 'branch', '-D', manifest.branchName],
-        { timeout: 10_000 }
-      );
-    } catch {
-      // ignore
-    }
-  }
+  await removePhysicalWorkspace(manifest, sessionId, goosePathRoot);
 
   const indexPath = workspaceRootForId(sessionId, goosePathRoot);
-  const resolvedIndexPath = path.resolve(indexPath);
-  const resolvedSessionRoot = path.resolve(manifest.rootPath);
-
-  if (
-    manifest.profile !== 'direct' &&
-    resolvedSessionRoot !== resolvedIndexPath &&
-    fsSync.existsSync(manifest.rootPath)
-  ) {
-    await fs.rm(manifest.rootPath, { recursive: true, force: true });
-  }
-
   if (fsSync.existsSync(indexPath)) {
     await fs.rm(indexPath, { recursive: true, force: true });
   }
@@ -473,9 +522,10 @@ export async function cleanupOrphanedWorkspaces(goosePathRoot?: string): Promise
     try {
       const stat = await fs.stat(dirPath);
       let createdAt = stat.mtimeMs;
+      let manifest: WorkspaceManifest | null = null;
 
       if (fsSync.existsSync(manifestPath)) {
-        const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as WorkspaceManifest;
+        manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as WorkspaceManifest;
         createdAt = Date.parse(manifest.createdAt) || createdAt;
         if (manifest.sessionId && manifest.sessionId !== entry.name) {
           continue;
@@ -483,6 +533,9 @@ export async function cleanupOrphanedWorkspaces(goosePathRoot?: string): Promise
       }
 
       if (now - createdAt > ORPHAN_TTL_MS) {
+        if (manifest) {
+          await removePhysicalWorkspace(manifest, entry.name, goosePathRoot);
+        }
         await fs.rm(dirPath, { recursive: true, force: true });
       }
     } catch {

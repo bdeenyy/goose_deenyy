@@ -128,7 +128,7 @@ export async function listWorktreeChangedFiles(
   try {
     const { stdout } = await execFileAsync(
       'git',
-      ['-C', workingDir, 'status', '--porcelain'],
+      ['-C', workingDir, 'status', '--porcelain', '-uall'],
       { timeout: 10_000 }
     );
 

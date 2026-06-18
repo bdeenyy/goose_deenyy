@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyWorkspaceToUserInput } from './resolveSessionWorkspace';
 import type { PreparedSessionWorkspace } from './resolveSessionWorkspace';
+import { pathMappingFromStagedFiles } from './workspaceHint';
 
 describe('resolveSessionWorkspace', () => {
   it('does not prepend workspace hint to user message', () => {
@@ -19,5 +20,16 @@ describe('resolveSessionWorkspace', () => {
 
     expect(result.msg).toBe('please read /tmp/workspace/inputs/file.txt');
     expect(result.msg).not.toContain('[Workspace isolation]');
+  });
+
+  it('builds path mapping from staged files after finalize', () => {
+    const mapping = pathMappingFromStagedFiles([
+      { original: '/tmp/file.txt', staged: '/project/.goose/sessions/id/inputs/file.txt', strategy: 'copy' },
+      { original: '/tmp/ref.txt', staged: '/tmp/ref.txt', strategy: 'reference' },
+    ]);
+
+    expect(mapping).toEqual({
+      '/tmp/file.txt': '/project/.goose/sessions/id/inputs/file.txt',
+    });
   });
 });

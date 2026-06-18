@@ -57,6 +57,40 @@ export function applyWorkspaceToUserInput(
   return { ...input, msg };
 }
 
+export async function stageUserInputFiles(sessionId: string, input: UserInput): Promise<UserInput> {
+  const filePaths = extractExternalFilePaths(input);
+  if (filePaths.length === 0) {
+    return input;
+  }
+
+  const info = await window.electron.getWorkspaceInfo(sessionId);
+  if (!info || info.profile === 'direct') {
+    return input;
+  }
+
+  const externalFileStrategy = (await window.electron.getSetting(
+    'externalFileStrategy'
+  )) as ExternalFileStrategy;
+
+  const { pathMapping } = await window.electron.stageSessionFiles({
+    sessionId,
+    filePaths,
+    externalFileStrategy,
+  });
+
+  if (Object.keys(pathMapping).length === 0) {
+    return input;
+  }
+
+  return applyWorkspaceToUserInput(input, {
+    workingDir: info.workingDir,
+    pendingWorkspaceId: sessionId,
+    workspaceHint: '',
+    pathMapping,
+    profile: info.profile,
+  });
+}
+
 export function extractExternalFilePaths(input: UserInput): string[] {
   return input.filePaths ?? [];
 }

@@ -69,6 +69,24 @@ describe('artifactScanner', () => {
     expect(truncated).toBe(true);
   });
 
+  it('lists untracked files inside new directories for worktree profile', async () => {
+    const root = await makeTempDir();
+    await execFileAsync('git', ['init'], { cwd: root });
+    await execFileAsync('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    await execFileAsync('git', ['config', 'user.name', 'Test User'], { cwd: root });
+    await fs.writeFile(path.join(root, 'tracked.txt'), 'initial');
+    await execFileAsync('git', ['add', 'tracked.txt'], { cwd: root });
+    await execFileAsync('git', ['commit', '-m', 'init'], { cwd: root });
+
+    await fs.mkdir(path.join(root, 'reports'), { recursive: true });
+    await fs.writeFile(path.join(root, 'reports', 'index.html'), '<html></html>');
+
+    const { files, truncated } = await listWorktreeChangedFiles(root);
+
+    expect(truncated).toBe(false);
+    expect(files.map((f) => f.relativePath).sort()).toEqual(['reports/index.html']);
+  });
+
   it('lists only changed files for worktree profile', async () => {
     const root = await makeTempDir();
     await execFileAsync('git', ['init'], { cwd: root });

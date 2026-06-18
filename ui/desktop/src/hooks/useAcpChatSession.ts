@@ -18,6 +18,7 @@ import {
 import { createUserMessage, NotificationEvent, UserInput } from '../types/message';
 import { errorMessage } from '../utils/conversionUtils';
 import { showExtensionLoadResults } from '../utils/extensionErrorUtils';
+import { stageUserInputFiles } from '../workspace/resolveSessionWorkspace';
 import type { UseChatSessionParams, UseChatSessionResult } from './useChatSessionTypes';
 import { cancelAcpPermissionRequestsForSession } from '../acp/permissionRequests';
 import {
@@ -378,7 +379,8 @@ export function useAcpChatSession({
 
   const handleSubmit = useCallback(
     async (input: UserInput) => {
-      const { msg: userMessage, images } = input;
+      const stagedInput = await stageUserInputFiles(sessionId, input);
+      const { msg: userMessage, images } = stagedInput;
       const currentState = stateRef.current;
 
       if (

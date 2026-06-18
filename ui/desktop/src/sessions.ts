@@ -17,6 +17,7 @@ import {
   needsExternalFileStrategyChoice,
   prepareSessionWorkspace,
 } from './workspace/resolveSessionWorkspace';
+import { pathMappingFromStagedFiles } from './workspace/workspaceHint';
 import type { UserInput } from './types/message';
 
 export interface CreateSessionWithWorkspaceOptions {
@@ -133,7 +134,7 @@ export async function createSessionWithWorkspace(
     externalFileStrategy = chosen;
   }
 
-  const workspace = await prepareSessionWorkspace({
+  let workspace = await prepareSessionWorkspace({
     workingDir: options.workingDir,
     directoryExplicitlyChosen,
     externalFilePaths,
@@ -159,6 +160,10 @@ export async function createSessionWithWorkspace(
       });
       session = { ...session, working_dir: finalWorkingDir };
     }
+    workspace = {
+      ...workspace,
+      pathMapping: pathMappingFromStagedFiles(info?.stagedFiles ?? []),
+    };
   }
 
   const userInput = options.userInput

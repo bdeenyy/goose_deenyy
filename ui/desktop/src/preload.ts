@@ -200,6 +200,11 @@ type ElectronAPI = {
     request: Record<string, unknown>
   ) => Promise<import('./workspace/types').ResolveWorkspaceResult>;
   finalizeSessionWorkspace: (request: Record<string, unknown>) => Promise<void>;
+  stageSessionFiles: (request: {
+    sessionId: string;
+    filePaths: string[];
+    externalFileStrategy?: import('./utils/settings').ExternalFileStrategy;
+  }) => Promise<import('./workspace/types').StageSessionFilesResult>;
   getWorkspaceInfo: (sessionId: string) => Promise<import('./workspace/types').WorkspaceInfo | null>;
   listSessionArtifacts: (
     sessionId: string,
@@ -256,6 +261,11 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('resolve-session-workspace', request),
   finalizeSessionWorkspace: (request: Record<string, unknown>) =>
     ipcRenderer.invoke('finalize-session-workspace', request),
+  stageSessionFiles: (request: {
+    sessionId: string;
+    filePaths: string[];
+    externalFileStrategy?: import('./utils/settings').ExternalFileStrategy;
+  }) => ipcRenderer.invoke('stage-session-files', request),
   getWorkspaceInfo: (sessionId: string) => ipcRenderer.invoke('get-workspace-info', sessionId),
   listSessionArtifacts: (sessionId: string, workingDir?: string) =>
     ipcRenderer.invoke('list-session-artifacts', { sessionId, workingDir }),

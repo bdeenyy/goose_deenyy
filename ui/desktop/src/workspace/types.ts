@@ -52,3 +52,14 @@ export interface WorkspaceInfo {
   workingDir: string;
   stagedFiles: StagedFile[];
 }
+
+export interface StageSessionFilesRequest {
+  sessionId: string;
+  filePaths: string[];
+  externalFileStrategy: ExternalFileStrategy;
+  goosePathRoot?: string;
+}
+
+export interface StageSessionFilesResult {
+  pathMapping: Record<string, string>;
+}
