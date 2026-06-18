@@ -16,6 +16,7 @@ import type {
   StagedFile,
   StageSessionFilesRequest,
   StageSessionFilesResult,
+  UnstageablePathsError,
   WorkspaceInfo,
   WorkspaceManifest,
   WorkspaceProfile,
@@ -142,6 +143,164 @@ export async function createGitWorktree(
 function isPathInside(child: string, parent: string): boolean {
   const relative = path.relative(parent, child);
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+export { UnstageablePathsError } from './types';
+
+async function uniqueInputDir(inputsDir: string, dirPath: string): Promise<string> {
+  const baseName = path.basename(dirPath);
+  let candidate = path.join(inputsDir, baseName);
+  if (!fsSync.existsSync(candidate)) {
+    return candidate;
+  }
+
+  for (let i = 1; i < 1000; i++) {
+    candidate = path.join(inputsDir, `${baseName}-${i}`);
+    if (!fsSync.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return path.join(inputsDir, `${baseName}-${Date.now()}`);
+}
+
+async function copyDirectoryRecursive(source: string, destination: string): Promise<void> {
+  await fs.mkdir(destination, { recursive: true });
+  const entries = await fs.readdir(source, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const sourcePath = path.join(source, entry.name);
+    const destinationPath = path.join(destination, entry.name);
+
+    if (entry.isDirectory()) {
+      await copyDirectoryRecursive(sourcePath, destinationPath);
+    } else if (entry.isFile()) {
+      await fs.copyFile(sourcePath, destinationPath);
+    }
+  }
+}
+
+async function symlinkPath(original: string, staged: string, isDirectory: boolean): Promise<void> {
+  const type = isDirectory ? 'dir' : 'file';
+  await fs.symlink(original, staged, type);
+}
+
+function assertIsolatedStaging(
+  filePaths: string[],
+  workingDir: string,
+  pathMapping: Record<string, string>,
+  strategy: ExternalFileStrategy
+): void {
+  if (strategy === 'reference') {
+    return;
+  }
+
+  const unstaged = filePaths.filter((filePath) => {
+    if (!filePath?.trim() || !fsSync.existsSync(filePath)) {
+      return false;
+    }
+    if (isPathInside(filePath, workingDir)) {
+      return false;
+    }
+    return !(filePath in pathMapping);
+  });
+
+  if (unstaged.length > 0) {
+    throw new UnstageablePathsError(unstaged);
+  }
+}
+
+async function stageExternalDirectory(
+  original: string,
+  inputsDir: string,
+  strategy: ExternalFileStrategy
+): Promise<{ staged: string; effectiveStrategy: ExternalFileStrategy }> {
+  if (strategy === 'reference') {
+    return { staged: original, effectiveStrategy: 'reference' };
+  }
+
+  const staged = await uniqueInputDir(inputsDir, original);
+
+  if (strategy === 'copy') {
+    await copyDirectoryRecursive(original, staged);
+    return { staged, effectiveStrategy: 'copy' };
+  }
+
+  try {
+    await symlinkPath(original, staged, true);
+    return { staged, effectiveStrategy: 'symlink' };
+  } catch {
+    await copyDirectoryRecursive(original, staged);
+    return { staged, effectiveStrategy: 'copy' };
+  }
+}
+
+async function stageExternalFileToInputs(
+  original: string,
+  inputsDir: string,
+  strategy: ExternalFileStrategy,
+  sizeBytes: number
+): Promise<{ staged: string; effectiveStrategy: ExternalFileStrategy }> {
+  if (strategy === 'reference') {
+    return { staged: original, effectiveStrategy: 'reference' };
+  }
+
+  const staged = await uniqueInputPath(inputsDir, original);
+
+  if (strategy === 'copy') {
+    if (sizeBytes > LARGE_FILE_BYTES) {
+      try {
+        await symlinkPath(original, staged, false);
+        return { staged, effectiveStrategy: 'symlink' };
+      } catch {
+        throw new UnstageablePathsError([original]);
+      }
+    }
+    await fs.copyFile(original, staged);
+    return { staged, effectiveStrategy: 'copy' };
+  }
+
+  try {
+    await symlinkPath(original, staged, false);
+    return { staged, effectiveStrategy: 'symlink' };
+  } catch {
+    await fs.copyFile(original, staged);
+    return { staged, effectiveStrategy: 'copy' };
+  }
+}
+
+async function stageRepoFileInWorktree(
+  original: string,
+  worktreePath: string,
+  strategy: ExternalFileStrategy,
+  isDirectory: boolean
+): Promise<{ staged: string; effectiveStrategy: ExternalFileStrategy }> {
+  const worktreeExists = fsSync.existsSync(worktreePath);
+  const sameContent =
+    !isDirectory &&
+    worktreeExists &&
+    fsSync.statSync(worktreePath).isFile() &&
+    filesHaveSameContent(original, worktreePath);
+
+  if (worktreeExists && sameContent) {
+    return { staged: worktreePath, effectiveStrategy: 'reference' };
+  }
+
+  if (!worktreeExists && strategy === 'reference') {
+    return { staged: worktreePath, effectiveStrategy: 'reference' };
+  }
+
+  const syncStrategy = sameContent ? strategy : 'copy';
+
+  if (isDirectory) {
+    if (fsSync.existsSync(worktreePath)) {
+      await fs.rm(worktreePath, { recursive: true, force: true });
+    }
+    await copyDirectoryRecursive(original, worktreePath);
+    return { staged: worktreePath, effectiveStrategy: 'copy' };
+  }
+
+  await copyFileToWorktreeLocation(original, worktreePath, syncStrategy);
+  return { staged: worktreePath, effectiveStrategy: syncStrategy };
 }
 
 async function uniqueInputPath(inputsDir: string, filePath: string): Promise<string> {
@@ -303,61 +462,54 @@ async function stageExternalFiles(
     }
 
     const stat = fsSync.statSync(original);
-    if (!stat.isFile()) {
-      continue;
+    const isDirectory = stat.isDirectory();
+    if (!stat.isFile() && !isDirectory) {
+      throw new UnstageablePathsError([original]);
     }
 
     if (repoRoot) {
       const worktreePath = worktreePathForRepoFile(repoRoot, workingDir, original);
       if (worktreePath) {
-        const worktreeExists =
-          fsSync.existsSync(worktreePath) && fsSync.statSync(worktreePath).isFile();
-        const sameContent = worktreeExists && filesHaveSameContent(original, worktreePath);
-
-        if (worktreeExists && sameContent) {
-          stagedFiles.push({ original, staged: worktreePath, strategy: 'reference' });
-          pathMapping[original] = worktreePath;
-          continue;
+        const { staged, effectiveStrategy } = await stageRepoFileInWorktree(
+          original,
+          worktreePath,
+          strategy,
+          isDirectory
+        );
+        stagedFiles.push({ original, staged, strategy: effectiveStrategy });
+        if (staged !== original) {
+          pathMapping[original] = staged;
         }
-
-        if (!worktreeExists && strategy === 'reference') {
-          stagedFiles.push({ original, staged: worktreePath, strategy: 'reference' });
-          pathMapping[original] = worktreePath;
-          continue;
-        }
-
-        const syncStrategy = sameContent ? strategy : 'copy';
-        await copyFileToWorktreeLocation(original, worktreePath, syncStrategy);
-        stagedFiles.push({ original, staged: worktreePath, strategy: syncStrategy });
-        pathMapping[original] = worktreePath;
         continue;
       }
     }
 
-    if (strategy === 'reference') {
-      stagedFiles.push({ original, staged: original, strategy });
+    if (isDirectory) {
+      const { staged, effectiveStrategy } = await stageExternalDirectory(
+        original,
+        inputsDir,
+        strategy
+      );
+      stagedFiles.push({ original, staged, strategy: effectiveStrategy });
+      if (staged !== original) {
+        pathMapping[original] = staged;
+      }
       continue;
     }
 
-    const staged = await uniqueInputPath(inputsDir, original);
-
-    if (strategy === 'copy') {
-      if (stat.size > LARGE_FILE_BYTES) {
-        stagedFiles.push({ original, staged: original, strategy: 'reference' });
-        continue;
-      }
-      await fs.copyFile(original, staged);
-    } else {
-      try {
-        await fs.symlink(original, staged);
-      } catch {
-        await fs.copyFile(original, staged);
-      }
+    const { staged, effectiveStrategy } = await stageExternalFileToInputs(
+      original,
+      inputsDir,
+      strategy,
+      stat.size
+    );
+    stagedFiles.push({ original, staged, strategy: effectiveStrategy });
+    if (staged !== original) {
+      pathMapping[original] = staged;
     }
-
-    stagedFiles.push({ original, staged, strategy });
-    pathMapping[original] = staged;
   }
+
+  assertIsolatedStaging(filePaths, workingDir, pathMapping, strategy);
 
   return { stagedFiles, pathMapping };
 }

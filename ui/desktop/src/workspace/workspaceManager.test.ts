@@ -326,6 +326,77 @@ describe('workspaceManager', () => {
     expect(updated?.stagedFiles[0]?.strategy).toBe('copy');
   });
 
+  it('stages dropped directories into sandbox inputs', async () => {
+    const gooseRoot = await makeTempDir('goose-data-');
+    const contextDir = await makeTempDir('context-');
+    const sessionId = 'dir-session';
+    const sessionRoot = sandboxSessionRoot(contextDir, sessionId);
+    const workingDir = path.join(sessionRoot, 'workspace');
+    await fs.mkdir(workingDir, { recursive: true });
+
+    const externalDir = await makeTempDir('external-dir-');
+    await fs.writeFile(path.join(externalDir, 'note.txt'), 'hello');
+
+    const manifest: WorkspaceManifest = {
+      sessionId,
+      profile: 'sandbox',
+      rootPath: sessionRoot,
+      workingDir,
+      stagedFiles: [],
+      createdAt: new Date().toISOString(),
+      status: 'active',
+    };
+    await writeManifestAtIndex(gooseRoot, sessionId, manifest);
+
+    const { pathMapping } = await stageSessionFiles({
+      sessionId,
+      filePaths: [externalDir],
+      externalFileStrategy: 'copy',
+      goosePathRoot: gooseRoot,
+    });
+
+    const stagedDir = pathMapping[externalDir];
+    expect(stagedDir).toBeDefined();
+    expect(fsSync.existsSync(path.join(stagedDir, 'note.txt'))).toBe(true);
+  });
+
+  it('symlinks oversized files into inputs when copy strategy is requested', async () => {
+    const gooseRoot = await makeTempDir('goose-data-');
+    const contextDir = await makeTempDir('context-');
+    const sessionId = 'large-file-session';
+    const sessionRoot = sandboxSessionRoot(contextDir, sessionId);
+    const workingDir = path.join(sessionRoot, 'workspace');
+    await fs.mkdir(workingDir, { recursive: true });
+
+    const largeFile = path.join(await makeTempDir('large-file-'), 'big.bin');
+    const largeFileBytes = 50 * 1024 * 1024 + 1;
+    await fs.writeFile(largeFile, Buffer.alloc(largeFileBytes));
+
+    const manifest: WorkspaceManifest = {
+      sessionId,
+      profile: 'sandbox',
+      rootPath: sessionRoot,
+      workingDir,
+      stagedFiles: [],
+      createdAt: new Date().toISOString(),
+      status: 'active',
+    };
+    await writeManifestAtIndex(gooseRoot, sessionId, manifest);
+
+    const { pathMapping } = await stageSessionFiles({
+      sessionId,
+      filePaths: [largeFile],
+      externalFileStrategy: 'copy',
+      goosePathRoot: gooseRoot,
+    });
+
+    expect(pathMapping[largeFile]).toMatch(/inputs[/\\]big\.bin$/);
+
+    const updated = await readManifestForSession(sessionId, gooseRoot);
+    expect(updated?.stagedFiles[0]?.strategy).toBe('symlink');
+    expect(fsSync.lstatSync(pathMapping[largeFile]).isSymbolicLink()).toBe(true);
+  });
+
   it('uses a unique branch name when the default worktree branch already exists', async () => {
     const repoRoot = await makeTempDir('git-repo-');
     await execFileAsync('git', ['init'], { cwd: repoRoot });

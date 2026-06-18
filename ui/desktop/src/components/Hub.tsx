@@ -120,7 +120,6 @@ export default function Hub({
   const handleWorkingDirChange = (newDir: string) => {
     setWorkingDir(newDir);
     setDirectoryExplicitlyChosen(true);
-    setSessionWorkspaceProfile('direct');
   };
 
   const handleSubmit = async (input: UserInput) => {

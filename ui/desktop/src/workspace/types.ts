@@ -64,3 +64,13 @@ export interface StageSessionFilesRequest {
 export interface StageSessionFilesResult {
   pathMapping: Record<string, string>;
 }
+
+export class UnstageablePathsError extends Error {
+  readonly paths: string[];
+
+  constructor(paths: string[]) {
+    super(`Could not stage external paths for isolation: ${paths.join(', ')}`);
+    this.name = 'UnstageablePathsError';
+    this.paths = paths;
+  }
+}

@@ -19,6 +19,7 @@ import { createUserMessage, NotificationEvent, UserInput } from '../types/messag
 import { errorMessage } from '../utils/conversionUtils';
 import { showExtensionLoadResults } from '../utils/extensionErrorUtils';
 import { stageUserInputFiles } from '../workspace/resolveSessionWorkspace';
+import { toastError } from '../toasts';
 import type { UseChatSessionParams, UseChatSessionResult } from './useChatSessionTypes';
 import { cancelAcpPermissionRequestsForSession } from '../acp/permissionRequests';
 import {
@@ -379,7 +380,13 @@ export function useAcpChatSession({
 
   const handleSubmit = useCallback(
     async (input: UserInput) => {
-      const stagedInput = await stageUserInputFiles(sessionId, input);
+      let stagedInput: UserInput;
+      try {
+        stagedInput = await stageUserInputFiles(sessionId, input);
+      } catch (error) {
+        toastError(errorMessage(error));
+        return;
+      }
       const { msg: userMessage, images } = stagedInput;
       const currentState = stateRef.current;
 

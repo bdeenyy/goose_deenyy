@@ -28,6 +28,7 @@ import {
 import { errorMessage } from '../utils/conversionUtils';
 import { showExtensionLoadResults } from '../utils/extensionErrorUtils';
 import { stageUserInputFiles } from '../workspace/resolveSessionWorkspace';
+import { toastError } from '../toasts';
 import { maybeHandlePlatformEvent } from '../utils/platform_events';
 import { useSessionEvents, type SessionEvent } from './useSessionEvents';
 import type { UseChatSessionParams, UseChatSessionResult } from './useChatSessionTypes';
@@ -840,7 +841,13 @@ export function useChatStream({
 
   const handleSubmit = useCallback(
     async (input: UserInput) => {
-      const stagedInput = await stageUserInputFiles(sessionId, input);
+      let stagedInput: UserInput;
+      try {
+        stagedInput = await stageUserInputFiles(sessionId, input);
+      } catch (error) {
+        toastError(errorMessage(error));
+        return;
+      }
       const { msg: userMessage, images } = stagedInput;
       const currentState = stateRef.current;
 
