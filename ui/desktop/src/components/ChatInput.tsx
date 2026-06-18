@@ -1290,9 +1290,16 @@ export default function ChatInput({
     } else {
       trackFileAttached('file');
       const path = window.electron.getPathForFile(file);
-      const newValue = displayValue.trim() ? `${displayValue.trim()} ${path}` : path;
-      setDisplayValue(newValue);
-      setValue(newValue);
+      setLocalDroppedFiles((prev) => [
+        ...prev,
+        {
+          id: `picked-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          path,
+          name: file.name,
+          type: file.type,
+          isImage: false,
+        },
+      ]);
     }
 
     textAreaRef.current?.focus();

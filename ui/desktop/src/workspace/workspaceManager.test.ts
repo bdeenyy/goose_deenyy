@@ -282,6 +282,50 @@ describe('workspaceManager', () => {
     expect(updated?.stagedFiles[0]?.strategy).toBe('reference');
   });
 
+  it('copies dirty repo file contents into the worktree before staging', async () => {
+    const gooseRoot = await makeTempDir('goose-data-');
+    const repoRoot = await makeTempDir('git-repo-');
+    await execFileAsync('git', ['init'], { cwd: repoRoot });
+    await execFileAsync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoRoot });
+    await execFileAsync('git', ['config', 'user.name', 'Test User'], { cwd: repoRoot });
+    await fs.mkdir(path.join(repoRoot, 'src'), { recursive: true });
+    const repoFile = path.join(repoRoot, 'src', 'foo.ts');
+    await fs.writeFile(repoFile, 'export const foo = 1;');
+    await execFileAsync('git', ['add', 'src/foo.ts'], { cwd: repoRoot });
+    await execFileAsync('git', ['commit', '-m', 'init'], { cwd: repoRoot });
+
+    const sessionId = 'dirty-worktree-session';
+    const { workingDir, branchName } = await createGitWorktree(repoRoot, sessionId);
+    const worktreeFile = path.join(workingDir, 'src', 'foo.ts');
+    await fs.writeFile(repoFile, 'export const foo = 2; // dirty edit');
+
+    const manifest: WorkspaceManifest = {
+      sessionId,
+      profile: 'worktree',
+      rootPath: workingDir,
+      workingDir,
+      repoRoot,
+      branchName,
+      stagedFiles: [],
+      createdAt: new Date().toISOString(),
+      status: 'active',
+    };
+    await writeManifestAtIndex(gooseRoot, sessionId, manifest);
+
+    const { pathMapping } = await stageSessionFiles({
+      sessionId,
+      filePaths: [repoFile],
+      externalFileStrategy: 'copy',
+      goosePathRoot: gooseRoot,
+    });
+
+    expect(pathMapping[repoFile]).toBe(worktreeFile);
+    expect(fsSync.readFileSync(worktreeFile, 'utf8')).toBe('export const foo = 2; // dirty edit');
+
+    const updated = await readManifestForSession(sessionId, gooseRoot);
+    expect(updated?.stagedFiles[0]?.strategy).toBe('copy');
+  });
+
   it('uses a unique branch name when the default worktree branch already exists', async () => {
     const repoRoot = await makeTempDir('git-repo-');
     await execFileAsync('git', ['init'], { cwd: repoRoot });

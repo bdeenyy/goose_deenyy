@@ -225,6 +225,15 @@ function worktreePathForRepoFile(
   return path.join(workingDir, relativePath);
 }
 
+function filesHaveSameContent(pathA: string, pathB: string): boolean {
+  const statA = fsSync.statSync(pathA);
+  const statB = fsSync.statSync(pathB);
+  if (statA.size !== statB.size) {
+    return false;
+  }
+  return fsSync.readFileSync(pathA).equals(fsSync.readFileSync(pathB));
+}
+
 async function copyFileToWorktreeLocation(
   original: string,
   worktreePath: string,
@@ -301,20 +310,25 @@ async function stageExternalFiles(
     if (repoRoot) {
       const worktreePath = worktreePathForRepoFile(repoRoot, workingDir, original);
       if (worktreePath) {
-        if (fsSync.existsSync(worktreePath) && fsSync.statSync(worktreePath).isFile()) {
+        const worktreeExists =
+          fsSync.existsSync(worktreePath) && fsSync.statSync(worktreePath).isFile();
+        const sameContent = worktreeExists && filesHaveSameContent(original, worktreePath);
+
+        if (worktreeExists && sameContent) {
           stagedFiles.push({ original, staged: worktreePath, strategy: 'reference' });
           pathMapping[original] = worktreePath;
           continue;
         }
 
-        if (strategy === 'reference') {
+        if (!worktreeExists && strategy === 'reference') {
           stagedFiles.push({ original, staged: worktreePath, strategy: 'reference' });
           pathMapping[original] = worktreePath;
           continue;
         }
 
-        await copyFileToWorktreeLocation(original, worktreePath, strategy);
-        stagedFiles.push({ original, staged: worktreePath, strategy });
+        const syncStrategy = sameContent ? strategy : 'copy';
+        await copyFileToWorktreeLocation(original, worktreePath, syncStrategy);
+        stagedFiles.push({ original, staged: worktreePath, strategy: syncStrategy });
         pathMapping[original] = worktreePath;
         continue;
       }
