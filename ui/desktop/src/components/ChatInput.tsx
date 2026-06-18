@@ -1109,9 +1109,7 @@ export default function ChatInput({
         if (displayValue.trim()) {
           LocalMessageStorage.addMessage(displayValue);
         } else {
-          const droppedFilePaths = allDroppedFiles
-            .filter((file) => !file.isImage && !file.error && !file.isLoading)
-            .map((file) => file.path);
+          const droppedFilePaths = getSubmittableFilePaths();
           if (droppedFilePaths.length > 0) {
             LocalMessageStorage.addMessage(droppedFilePaths.join(' '));
           }
