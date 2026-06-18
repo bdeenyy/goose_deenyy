@@ -1,3 +1,4 @@
+import { v7 as uuidv7 } from 'uuid';
 import type { ExternalFileStrategy, WorkspaceProfile } from '../utils/settings';
 import type { ResolveWorkspaceResult } from './types';
 import { applyPathMapping } from './workspaceHint';
@@ -22,7 +23,7 @@ export interface PreparedSessionWorkspace {
 export async function prepareSessionWorkspace(
   options: PrepareSessionWorkspaceOptions
 ): Promise<PreparedSessionWorkspace> {
-  const pendingId = crypto.randomUUID();
+  const pendingId = uuidv7();
   const result = await window.electron.resolveSessionWorkspace({
     pendingId,
     profile: options.workspaceProfile,
