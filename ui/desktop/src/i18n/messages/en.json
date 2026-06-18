@@ -1526,6 +1526,33 @@
   "hub.goodMorning": {
     "defaultMessage": "Good morning"
   },
+  "hub.workspaceProfile.auto": {
+    "defaultMessage": "Auto"
+  },
+  "hub.workspaceProfile.autoTooltip": {
+    "defaultMessage": "Auto (worktree in git repos, otherwise sandbox). Default from Settings."
+  },
+  "hub.workspaceProfile.direct": {
+    "defaultMessage": "Direct"
+  },
+  "hub.workspaceProfile.directTooltip": {
+    "defaultMessage": "Direct (no isolation). Default from Settings."
+  },
+  "hub.workspaceProfile.recommended": {
+    "defaultMessage": "Recommended"
+  },
+  "hub.workspaceProfile.sandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "hub.workspaceProfile.sandboxTooltip": {
+    "defaultMessage": "Always sandbox. Default from Settings."
+  },
+  "hub.workspaceProfile.worktree": {
+    "defaultMessage": "Worktree"
+  },
+  "hub.workspaceProfile.worktreeTooltip": {
+    "defaultMessage": "Prefer git worktree. Default from Settings."
+  },
   "huggingFaceModelSearch.download": {
     "defaultMessage": "Download"
   },
@@ -3830,6 +3857,81 @@
   "sessionActionsHeader.viewJson": {
     "defaultMessage": "View session JSON"
   },
+  "sessionArtifacts.branchName": {
+    "defaultMessage": "Branch"
+  },
+  "sessionArtifacts.copiedPath": {
+    "defaultMessage": "Path copied"
+  },
+  "sessionArtifacts.copyPath": {
+    "defaultMessage": "Copy path"
+  },
+  "sessionArtifacts.empty": {
+    "defaultMessage": "No files yet"
+  },
+  "sessionArtifacts.emptyDirect": {
+    "defaultMessage": "Project files are not listed in direct mode — open the folder in your file manager"
+  },
+  "sessionArtifacts.emptyWorktree": {
+    "defaultMessage": "Only files changed in this session are shown"
+  },
+  "sessionArtifacts.externalBadge": {
+    "defaultMessage": "External"
+  },
+  "sessionArtifacts.fileCount": {
+    "defaultMessage": "{count,plural,one{# file} other{# files}}"
+  },
+  "sessionArtifacts.inputs": {
+    "defaultMessage": "Inputs"
+  },
+  "sessionArtifacts.meta": {
+    "defaultMessage": "Meta"
+  },
+  "sessionArtifacts.openFailed": {
+    "defaultMessage": "Could not open path in file manager"
+  },
+  "sessionArtifacts.openInFinder": {
+    "defaultMessage": "Open in file manager"
+  },
+  "sessionArtifacts.profileDirect": {
+    "defaultMessage": "Direct"
+  },
+  "sessionArtifacts.profileSandbox": {
+    "defaultMessage": "Sandbox"
+  },
+  "sessionArtifacts.profileWorktree": {
+    "defaultMessage": "Worktree"
+  },
+  "sessionArtifacts.refresh": {
+    "defaultMessage": "Refresh"
+  },
+  "sessionArtifacts.refreshing": {
+    "defaultMessage": "Refreshing…"
+  },
+  "sessionArtifacts.repoRoot": {
+    "defaultMessage": "Repository"
+  },
+  "sessionArtifacts.rootPath": {
+    "defaultMessage": "Workspace root"
+  },
+  "sessionArtifacts.title": {
+    "defaultMessage": "Artifacts"
+  },
+  "sessionArtifacts.toggleClose": {
+    "defaultMessage": "Hide artifacts panel"
+  },
+  "sessionArtifacts.toggleOpen": {
+    "defaultMessage": "Show artifacts panel"
+  },
+  "sessionArtifacts.truncated": {
+    "defaultMessage": "Showing first {count} files"
+  },
+  "sessionArtifacts.workingDir": {
+    "defaultMessage": "Working directory"
+  },
+  "sessionArtifacts.workspace": {
+    "defaultMessage": "Workspace"
+  },
   "sessionHistory.cancel": {
     "defaultMessage": "Cancel"
   },
@@ -4906,107 +5008,5 @@
   },
   "workspaceSettings.title": {
     "defaultMessage": "Session workspace"
-  },
-  "sessionArtifacts.title": {
-    "defaultMessage": "Artifacts"
-  },
-  "sessionArtifacts.toggleOpen": {
-    "defaultMessage": "Show artifacts panel"
-  },
-  "sessionArtifacts.toggleClose": {
-    "defaultMessage": "Hide artifacts panel"
-  },
-  "sessionArtifacts.inputs": {
-    "defaultMessage": "Inputs"
-  },
-  "sessionArtifacts.workspace": {
-    "defaultMessage": "Workspace"
-  },
-  "sessionArtifacts.meta": {
-    "defaultMessage": "Meta"
-  },
-  "sessionArtifacts.refresh": {
-    "defaultMessage": "Refresh"
-  },
-  "sessionArtifacts.refreshing": {
-    "defaultMessage": "Refreshing…"
-  },
-  "sessionArtifacts.empty": {
-    "defaultMessage": "No files yet"
-  },
-  "sessionArtifacts.emptyDirect": {
-    "defaultMessage": "Project files are not listed in direct mode — open the folder in your file manager"
-  },
-  "sessionArtifacts.emptyWorktree": {
-    "defaultMessage": "Only files changed in this session are shown"
-  },
-  "sessionArtifacts.openInFinder": {
-    "defaultMessage": "Open in file manager"
-  },
-  "sessionArtifacts.copyPath": {
-    "defaultMessage": "Copy path"
-  },
-  "sessionArtifacts.copiedPath": {
-    "defaultMessage": "Path copied"
-  },
-  "sessionArtifacts.openFailed": {
-    "defaultMessage": "Could not open path in file manager"
-  },
-  "sessionArtifacts.externalBadge": {
-    "defaultMessage": "External"
-  },
-  "sessionArtifacts.fileCount": {
-    "defaultMessage": "{count, plural, one {# file} other {# files}}"
-  },
-  "sessionArtifacts.truncated": {
-    "defaultMessage": "Showing first {count} files"
-  },
-  "sessionArtifacts.profileSandbox": {
-    "defaultMessage": "Sandbox"
-  },
-  "sessionArtifacts.profileWorktree": {
-    "defaultMessage": "Worktree"
-  },
-  "sessionArtifacts.profileDirect": {
-    "defaultMessage": "Direct"
-  },
-  "sessionArtifacts.workingDir": {
-    "defaultMessage": "Working directory"
-  },
-  "sessionArtifacts.rootPath": {
-    "defaultMessage": "Workspace root"
-  },
-  "sessionArtifacts.branchName": {
-    "defaultMessage": "Branch"
-  },
-  "sessionArtifacts.repoRoot": {
-    "defaultMessage": "Repository"
-  },
-  "hub.workspaceProfile.auto": {
-    "defaultMessage": "Auto"
-  },
-  "hub.workspaceProfile.sandbox": {
-    "defaultMessage": "Sandbox"
-  },
-  "hub.workspaceProfile.worktree": {
-    "defaultMessage": "Worktree"
-  },
-  "hub.workspaceProfile.direct": {
-    "defaultMessage": "Direct"
-  },
-  "hub.workspaceProfile.autoTooltip": {
-    "defaultMessage": "Auto (worktree in git repos, otherwise sandbox). Default from Settings."
-  },
-  "hub.workspaceProfile.sandboxTooltip": {
-    "defaultMessage": "Always sandbox. Default from Settings."
-  },
-  "hub.workspaceProfile.worktreeTooltip": {
-    "defaultMessage": "Prefer git worktree. Default from Settings."
-  },
-  "hub.workspaceProfile.directTooltip": {
-    "defaultMessage": "Direct (no isolation). Default from Settings."
-  },
-  "hub.workspaceProfile.recommended": {
-    "defaultMessage": "Recommended"
   }
 }
