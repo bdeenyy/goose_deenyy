@@ -208,6 +208,42 @@ async function removePhysicalWorkspace(
   }
 }
 
+function worktreePathForRepoFile(
+  repoRoot: string,
+  workingDir: string,
+  filePath: string
+): string | null {
+  if (!isPathInside(filePath, repoRoot)) {
+    return null;
+  }
+
+  const relativePath = path.relative(repoRoot, filePath);
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    return null;
+  }
+
+  return path.join(workingDir, relativePath);
+}
+
+async function copyFileToWorktreeLocation(
+  original: string,
+  worktreePath: string,
+  strategy: ExternalFileStrategy
+): Promise<void> {
+  await fs.mkdir(path.dirname(worktreePath), { recursive: true });
+
+  if (strategy === 'copy') {
+    await fs.copyFile(original, worktreePath);
+    return;
+  }
+
+  try {
+    await fs.symlink(original, worktreePath);
+  } catch {
+    await fs.copyFile(original, worktreePath);
+  }
+}
+
 export async function stageSessionFiles(
   request: StageSessionFilesRequest
 ): Promise<StageSessionFilesResult> {
@@ -220,7 +256,8 @@ export async function stageSessionFiles(
     manifest.rootPath,
     manifest.workingDir,
     request.filePaths,
-    request.externalFileStrategy
+    request.externalFileStrategy,
+    manifest.repoRoot
   );
 
   if (stagedFiles.length === 0) {
@@ -238,7 +275,8 @@ async function stageExternalFiles(
   workspaceRoot: string,
   workingDir: string,
   filePaths: string[],
-  strategy: ExternalFileStrategy
+  strategy: ExternalFileStrategy,
+  repoRoot?: string
 ): Promise<{ stagedFiles: StagedFile[]; pathMapping: Record<string, string> }> {
   const inputsDir = path.join(workspaceRoot, 'inputs');
   await fs.mkdir(inputsDir, { recursive: true });
@@ -258,6 +296,28 @@ async function stageExternalFiles(
     const stat = fsSync.statSync(original);
     if (!stat.isFile()) {
       continue;
+    }
+
+    if (repoRoot) {
+      const worktreePath = worktreePathForRepoFile(repoRoot, workingDir, original);
+      if (worktreePath) {
+        if (fsSync.existsSync(worktreePath) && fsSync.statSync(worktreePath).isFile()) {
+          stagedFiles.push({ original, staged: worktreePath, strategy: 'reference' });
+          pathMapping[original] = worktreePath;
+          continue;
+        }
+
+        if (strategy === 'reference') {
+          stagedFiles.push({ original, staged: worktreePath, strategy: 'reference' });
+          pathMapping[original] = worktreePath;
+          continue;
+        }
+
+        await copyFileToWorktreeLocation(original, worktreePath, strategy);
+        stagedFiles.push({ original, staged: worktreePath, strategy });
+        pathMapping[original] = worktreePath;
+        continue;
+      }
     }
 
     if (strategy === 'reference') {
@@ -379,6 +439,7 @@ export async function resolveWorkspace(
       workingDir,
       stagedFiles: [],
       createdAt: new Date().toISOString(),
+      status: 'pending',
     };
 
     await writeManifest(rootPath, manifest);
@@ -422,7 +483,8 @@ export async function resolveWorkspace(
     sessionRoot,
     workingDir,
     externalFilePaths,
-    request.externalFileStrategy
+    request.externalFileStrategy,
+    repoRoot
   );
 
   const manifest: WorkspaceManifest = {
@@ -434,6 +496,7 @@ export async function resolveWorkspace(
     branchName,
     stagedFiles,
     createdAt: new Date().toISOString(),
+    status: 'pending',
   };
 
   await fs.mkdir(indexRoot, { recursive: true });
@@ -506,6 +569,7 @@ export async function finalizeWorkspace(request: FinalizeWorkspaceRequest): Prom
   }));
 
   manifest.sessionId = sessionId;
+  manifest.status = 'active';
   const manifestWritePath = fsSync.existsSync(finalIndexPath) ? finalIndexPath : pendingIndexPath;
   await fs.writeFile(
     manifestPathForRoot(manifestWritePath),
@@ -559,6 +623,11 @@ export async function cleanupOrphanedWorkspaces(goosePathRoot?: string): Promise
         if (manifest.sessionId && manifest.sessionId !== entry.name) {
           continue;
         }
+        if (manifest.status !== 'pending') {
+          continue;
+        }
+      } else {
+        continue;
       }
 
       if (now - createdAt > ORPHAN_TTL_MS) {

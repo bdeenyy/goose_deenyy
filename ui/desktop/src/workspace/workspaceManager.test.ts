@@ -140,6 +140,7 @@ describe('workspaceManager', () => {
     expect(updated?.workingDir).toBe(finalWorkingDir);
     expect(updated?.rootPath).toBe(finalRoot);
     expect(updated?.stagedFiles[0]?.staged).toBe(finalStaged);
+    expect(updated?.status).toBe('active');
 
     const info = await getWorkspaceInfo(sessionId, gooseRoot);
     expect(info?.workingDir).toBe(finalWorkingDir);
@@ -199,6 +200,7 @@ describe('workspaceManager', () => {
       workingDir,
       stagedFiles: [],
       createdAt: staleDate,
+      status: 'pending',
     };
     await writeManifestAtIndex(gooseRoot, pendingId, manifest);
 
@@ -206,6 +208,78 @@ describe('workspaceManager', () => {
 
     expect(fsSync.existsSync(sessionRoot)).toBe(false);
     expect(fsSync.existsSync(workspaceIndexPath(gooseRoot, pendingId))).toBe(false);
+  });
+
+  it('does not delete active finalized workspaces after TTL', async () => {
+    const gooseRoot = await makeTempDir('goose-data-');
+    const contextDir = await makeTempDir('context-');
+    const sessionId = 'active-session';
+    const sessionRoot = sandboxSessionRoot(contextDir, sessionId);
+    const workingDir = path.join(sessionRoot, 'workspace');
+    await fs.mkdir(workingDir, { recursive: true });
+    await fs.writeFile(path.join(workingDir, 'keep.txt'), 'data');
+
+    const staleDate = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    const manifest: WorkspaceManifest = {
+      sessionId,
+      profile: 'sandbox',
+      rootPath: sessionRoot,
+      workingDir,
+      stagedFiles: [],
+      createdAt: staleDate,
+      status: 'active',
+    };
+    await writeManifestAtIndex(gooseRoot, sessionId, manifest);
+
+    await cleanupOrphanedWorkspaces(gooseRoot);
+
+    expect(fsSync.existsSync(sessionRoot)).toBe(true);
+    expect(fsSync.existsSync(workspaceIndexPath(gooseRoot, sessionId))).toBe(true);
+  });
+
+  it('maps repo files to the worktree path instead of copying into inputs', async () => {
+    const gooseRoot = await makeTempDir('goose-data-');
+    const repoRoot = await makeTempDir('git-repo-');
+    await execFileAsync('git', ['init'], { cwd: repoRoot });
+    await execFileAsync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoRoot });
+    await execFileAsync('git', ['config', 'user.name', 'Test User'], { cwd: repoRoot });
+    await fs.mkdir(path.join(repoRoot, 'src'), { recursive: true });
+    const repoFile = path.join(repoRoot, 'src', 'foo.ts');
+    await fs.writeFile(repoFile, 'export const foo = 1;');
+    await execFileAsync('git', ['add', 'src/foo.ts'], { cwd: repoRoot });
+    await execFileAsync('git', ['commit', '-m', 'init'], { cwd: repoRoot });
+
+    const sessionId = 'worktree-session';
+    const { workingDir, branchName } = await createGitWorktree(repoRoot, sessionId);
+    const worktreeFile = path.join(workingDir, 'src', 'foo.ts');
+    expect(fsSync.existsSync(worktreeFile)).toBe(true);
+
+    const manifest: WorkspaceManifest = {
+      sessionId,
+      profile: 'worktree',
+      rootPath: workingDir,
+      workingDir,
+      repoRoot,
+      branchName,
+      stagedFiles: [],
+      createdAt: new Date().toISOString(),
+      status: 'active',
+    };
+    await writeManifestAtIndex(gooseRoot, sessionId, manifest);
+
+    const { pathMapping } = await stageSessionFiles({
+      sessionId,
+      filePaths: [repoFile],
+      externalFileStrategy: 'copy',
+      goosePathRoot: gooseRoot,
+    });
+
+    expect(pathMapping[repoFile]).toBe(worktreeFile);
+
+    const updated = await readManifestForSession(sessionId, gooseRoot);
+    expect(updated?.stagedFiles).toHaveLength(1);
+    expect(updated?.stagedFiles[0]?.staged).toBe(worktreeFile);
+    expect(updated?.stagedFiles[0]?.strategy).toBe('reference');
   });
 
   it('uses a unique branch name when the default worktree branch already exists', async () => {

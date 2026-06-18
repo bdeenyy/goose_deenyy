@@ -19,6 +19,7 @@ export interface WorkspaceManifest {
   branchName?: string;
   stagedFiles: StagedFile[];
   createdAt: string;
+  status?: 'pending' | 'active';
 }
 
 export interface ResolveWorkspaceRequest {
